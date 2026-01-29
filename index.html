@@ -44,6 +44,14 @@
             color: #C9A227;
         }
         
+        .user-badge {
+            font-size: 12px;
+            background: rgba(201, 162, 39, 0.2);
+            color: #C9A227;
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+        
         .live-badge {
             font-size: 11px;
             background: rgba(76, 175, 80, 0.2);
@@ -299,7 +307,7 @@
         
         .task-row {
             display: grid;
-            grid-template-columns: 24px 1fr 80px 100px 80px;
+            grid-template-columns: 24px 1fr 80px 80px;
             align-items: center;
             gap: 12px;
             padding: 10px 0;
@@ -349,11 +357,6 @@
         .task-effort {
             color: #888;
             text-align: right;
-        }
-        
-        .task-owner {
-            color: #888;
-            font-size: 12px;
         }
         
         .task-status {
@@ -421,6 +424,17 @@
             margin-bottom: 24px;
         }
         
+        .no-data-message {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+        
+        .no-data-message h3 {
+            margin-bottom: 8px;
+            color: #888;
+        }
+        
         /* Responsive */
         @media (max-width: 900px) {
             .summary-cards {
@@ -432,7 +446,7 @@
             .task-row {
                 grid-template-columns: 24px 1fr 60px;
             }
-            .task-owner, .task-effort {
+            .task-effort {
                 display: none;
             }
         }
@@ -448,8 +462,13 @@
 
     <script>
         const API_URL = 'https://studio-rnb-api.jbridges-c38.workers.dev';
+        
+        // Get user from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterUser = urlParams.get('user');
 
         let dashboardData = null;
+        let filteredData = null;
         let hoursChart = null;
         let phaseChart = null;
 
@@ -459,6 +478,14 @@
                 if (!response.ok) throw new Error(`API Error: ${response.status}`);
                 dashboardData = await response.json();
                 if (dashboardData.error) throw new Error(dashboardData.error);
+                
+                // Filter data if user parameter exists
+                if (filterUser) {
+                    filterDataByUser();
+                } else {
+                    filteredData = dashboardData;
+                }
+                
                 renderDashboard();
             } catch (error) {
                 document.getElementById('app').innerHTML = `
@@ -469,6 +496,54 @@
                     <div class="error-banner"><strong>Error:</strong> ${error.message}</div>
                 `;
             }
+        }
+
+        function filterDataByUser() {
+            const userLower = filterUser.toLowerCase();
+            
+            // Filter phases by team member (check entry field for name)
+            const userPhases = dashboardData.phases.filter(phase => {
+                return phase.entry.toLowerCase().includes(userLower);
+            });
+            
+            // Get phase IDs for this user
+            const userPhaseIds = userPhases.map(p => p.id);
+            
+            // Filter tasks by owner OR by being assigned to user's phases
+            const userTasks = dashboardData.tasks.filter(task => {
+                const ownerMatch = task.owner && task.owner.toLowerCase().includes(userLower);
+                const phaseMatch = task.phaseId && userPhaseIds.includes(task.phaseId);
+                return ownerMatch || phaseMatch;
+            });
+            
+            // Recalculate totals for filtered data
+            let totalAllocated = 0;
+            let totalLogged = 0;
+            const phaseBreakdown = {};
+            
+            userPhases.forEach(phase => {
+                totalAllocated += phase.hoursAllocated || 0;
+                totalLogged += phase.hoursLogged || 0;
+                
+                // Reassign tasks to phases
+                phase.tasks = userTasks.filter(t => t.phaseId === phase.id);
+                phase.taskHoursTotal = phase.tasks.reduce((sum, t) => sum + (t.effort || 0), 0);
+                
+                if (!phaseBreakdown[phase.phase]) {
+                    phaseBreakdown[phase.phase] = 0;
+                }
+                phaseBreakdown[phase.phase] += phase.hoursLogged || 0;
+            });
+            
+            filteredData = {
+                phases: userPhases,
+                tasks: userTasks,
+                totalAllocated: totalAllocated,
+                totalLogged: totalLogged,
+                totalRemaining: totalAllocated - totalLogged,
+                projectCount: new Set(userPhases.map(p => p.displayName)).size,
+                phaseBreakdown: phaseBreakdown
+            };
         }
 
         function getPhaseClass(phase) {
@@ -501,16 +576,36 @@
         }
 
         function renderDashboard() {
-            const data = dashboardData;
+            const data = filteredData;
+            
+            // Check if there's any data for this user
+            if (filterUser && data.phases.length === 0 && data.tasks.length === 0) {
+                document.getElementById('app').innerHTML = `
+                    <div class="header">
+                        <div class="header-left">
+                            <h1>📊 My Dashboard</h1>
+                            <span class="user-badge">${filterUser}</span>
+                        </div>
+                        <button class="refresh-btn" onclick="fetchData()">🔄 Refresh</button>
+                    </div>
+                    <div class="no-data-message">
+                        <h3>No phases or tasks found</h3>
+                        <p>No data assigned to ${filterUser} yet.</p>
+                    </div>
+                `;
+                return;
+            }
+            
             const completionPct = data.totalAllocated > 0 ? Math.round((data.totalLogged / data.totalAllocated) * 100) : 0;
             
-            // Find unassigned tasks
-            const unassignedTasks = data.tasks.filter(t => !t.phaseId);
+            // Find unassigned tasks (tasks owned by user but not linked to their phases)
+            const userPhaseIds = data.phases.map(p => p.id);
+            const unassignedTasks = data.tasks.filter(t => !t.phaseId || !userPhaseIds.includes(t.phaseId));
             
             // Build phase cards with tasks
             let phasesHTML = '';
             data.phases.forEach(phase => {
-                const pct = phase.percentage;
+                const pct = phase.percentage || 0;
                 const progressClass = getProgressClass(pct);
                 const phaseClass = getPhaseClass(phase.phase);
                 
@@ -525,7 +620,6 @@
                                 <div class="task-checkbox ${checkboxClass}"></div>
                                 <div class="task-name ${nameClass}">${task.action}</div>
                                 <div class="task-effort">${task.effort || '-'} hrs</div>
-                                <div class="task-owner">${task.owner}</div>
                                 <div class="task-status ${statusClass}">${task.status}</div>
                             </div>
                         `;
@@ -586,23 +680,26 @@
                             <div class="task-checkbox ${checkboxClass}"></div>
                             <div class="task-name">${task.action}</div>
                             <div class="task-effort">${task.effort || '-'} hrs</div>
-                            <div class="task-owner">${task.owner}</div>
                             <div class="task-status ${statusClass}">${task.status}</div>
                         </div>
                     `;
                 });
                 unassignedHTML = `
                     <div class="unassigned-section">
-                        <h3>⚠️ Unassigned Tasks (${unassignedTasks.length})</h3>
+                        <h3>📌 Other Tasks (${unassignedTasks.length})</h3>
                         ${unassignedTasksHTML}
                     </div>
                 `;
             }
 
+            const titleText = filterUser ? 'My Dashboard' : 'Studio RNB Dashboard';
+            const userBadge = filterUser ? `<span class="user-badge">${filterUser}</span>` : '';
+
             document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="header-left">
-                        <h1>📊 Studio RNB Dashboard</h1>
+                        <h1>📊 ${titleText}</h1>
+                        ${userBadge}
                         <div class="live-badge"><span class="live-dot"></span> Live</div>
                     </div>
                     <button class="refresh-btn" onclick="refreshData(this)">🔄 Refresh</button>
@@ -625,7 +722,7 @@
                         <div class="card-subtitle">${data.totalRemaining >= 0 ? 'Available' : 'Over budget'}</div>
                     </div>
                     <div class="card">
-                        <div class="card-label">Total Tasks</div>
+                        <div class="card-label">My Tasks</div>
                         <div class="card-value projects">${data.tasks.length}</div>
                         <div class="card-subtitle">${data.phases.length} phases</div>
                     </div>
@@ -645,8 +742,8 @@
                 ${unassignedHTML}
                 
                 <div class="phases-section">
-                    <h2>📁 Phases & Tasks</h2>
-                    ${phasesHTML}
+                    <h2>📁 My Phases & Tasks</h2>
+                    ${phasesHTML || '<div class="no-tasks">No phases assigned yet</div>'}
                 </div>
                 
                 <div class="last-updated">Last updated: ${new Date().toLocaleString()}</div>
@@ -662,7 +759,7 @@
         }
 
         function initCharts() {
-            const data = dashboardData;
+            const data = filteredData;
             if (hoursChart) hoursChart.destroy();
             if (phaseChart) phaseChart.destroy();
 
