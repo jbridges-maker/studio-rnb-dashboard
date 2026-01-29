@@ -5,48 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Studio RNB - Time Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #191919;
-            color: #ffffff;
+            color: #fff;
             padding: 24px;
             min-height: 100vh;
         }
         
-        .dashboard { max-width: 1200px; margin: 0 auto; }
+        .dashboard { max-width: 1400px; margin: 0 auto; }
         
         .header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
         }
         
-        .header-left { display: flex; align-items: center; gap: 16px; }
-        
+        .header-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .header h1 { font-size: 24px; font-weight: 600; color: #C9A227; }
         
-        .user-badge {
-            font-size: 12px;
-            background: rgba(201, 162, 39, 0.2);
-            color: #C9A227;
-            padding: 4px 12px;
-            border-radius: 12px;
-        }
-        
-        .live-badge {
+        .badge {
             font-size: 11px;
-            background: rgba(76, 175, 80, 0.2);
-            color: #4CAF50;
             padding: 4px 10px;
             border-radius: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            font-weight: 500;
         }
+        
+        .user-badge { background: rgba(201, 162, 39, 0.2); color: #C9A227; }
+        .live-badge { background: rgba(76, 175, 80, 0.2); color: #4CAF50; display: flex; align-items: center; gap: 6px; }
+        .leadership-badge { background: rgba(139, 92, 246, 0.2); color: #8B5CF6; }
         
         .live-dot {
             width: 6px; height: 6px;
@@ -57,7 +51,9 @@
         
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         
-        .refresh-btn {
+        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        
+        .btn {
             background: #333;
             border: 1px solid #444;
             color: #fff;
@@ -65,9 +61,15 @@
             border-radius: 8px;
             cursor: pointer;
             font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
         }
         
-        .refresh-btn:hover { background: #444; }
+        .btn:hover { background: #444; }
+        .btn-primary { background: #C9A227; border-color: #C9A227; color: #000; }
+        .btn-primary:hover { background: #b8922a; }
         
         .loading { text-align: center; padding: 60px; color: #888; }
         
@@ -82,11 +84,35 @@
         
         @keyframes spin { to { transform: rotate(360deg); } }
         
+        /* Alert Banner */
+        .alert-banner {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .alert-banner.warning {
+            background: rgba(255, 152, 0, 0.1);
+            border-color: rgba(255, 152, 0, 0.3);
+        }
+        
+        .alert-icon { font-size: 24px; }
+        .alert-content { flex: 1; }
+        .alert-title { font-weight: 600; color: #f44336; margin-bottom: 4px; }
+        .alert-banner.warning .alert-title { color: #FF9800; }
+        .alert-text { font-size: 13px; color: #999; }
+        
+        /* Summary Cards */
         .summary-cards {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
         
         .card {
@@ -96,67 +122,162 @@
             border: 1px solid #333;
         }
         
-        .card-label {
-            font-size: 12px;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
+        .card-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .card-value { font-size: 32px; font-weight: 700; }
+        .card-value.gold { color: #C9A227; }
+        .card-value.green { color: #4CAF50; }
+        .card-value.blue { color: #64B5F6; }
+        .card-value.purple { color: #CE93D8; }
+        .card-value.red { color: #f44336; }
+        .card-value.orange { color: #FF9800; }
+        .card-subtitle { font-size: 12px; color: #666; margin-top: 4px; }
+        .card-trend { font-size: 11px; margin-top: 8px; }
+        .card-trend.up { color: #4CAF50; }
+        .card-trend.down { color: #f44336; }
+        
+        /* Budget Alerts Section */
+        .budget-alerts {
+            background: #252525;
+            border-radius: 12px;
+            border: 1px solid #333;
+            padding: 20px;
+            margin-bottom: 24px;
         }
         
-        .card-value { font-size: 36px; font-weight: 700; }
-        .card-value.allocated { color: #C9A227; }
-        .card-value.logged { color: #4CAF50; }
-        .card-value.remaining { color: #64B5F6; }
-        .card-value.remaining.negative { color: #f44336; }
-        .card-value.projects { color: #CE93D8; }
+        .section-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
         
-        .card-subtitle { font-size: 12px; color: #666; margin-top: 4px; }
-        
-        .charts-section {
+        .budget-alert-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 100px 120px 100px;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 0;
+            border-bottom: 1px solid #333;
+            font-size: 13px;
+        }
+        
+        .budget-alert-row:last-child { border-bottom: none; }
+        
+        .budget-alert-name { font-weight: 500; }
+        .budget-alert-phase { color: #888; }
+        
+        .budget-bar {
+            background: #333;
+            border-radius: 4px;
+            height: 6px;
+            overflow: hidden;
+        }
+        
+        .budget-bar-fill { height: 100%; border-radius: 4px; }
+        .budget-bar-fill.warning { background: #FF9800; }
+        .budget-bar-fill.danger { background: #f44336; }
+        
+        .budget-pct { text-align: right; font-weight: 600; }
+        .budget-pct.warning { color: #FF9800; }
+        .budget-pct.danger { color: #f44336; }
+        
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 24px;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
         
         .chart-card {
             background: #252525;
             border-radius: 12px;
-            padding: 24px;
+            padding: 20px;
             border: 1px solid #333;
         }
         
-        .chart-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 20px; color: #fff; }
+        .chart-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
         .chart-container { position: relative; height: 200px; }
+        .chart-container.tall { height: 300px; }
         
-        .phases-section { margin-bottom: 32px; }
-        .phases-section h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #fff; }
+        /* Timeline / Gantt */
+        .timeline-section {
+            background: #252525;
+            border-radius: 12px;
+            border: 1px solid #333;
+            padding: 20px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+        
+        .timeline-container { min-width: 800px; }
+        
+        .timeline-header {
+            display: flex;
+            border-bottom: 1px solid #444;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .timeline-label { width: 200px; font-size: 11px; color: #888; text-transform: uppercase; }
+        .timeline-months { flex: 1; display: flex; }
+        .timeline-month { flex: 1; font-size: 11px; color: #888; text-align: center; }
+        
+        .timeline-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        
+        .timeline-row:last-child { border-bottom: none; }
+        .timeline-project { width: 200px; font-size: 13px; font-weight: 500; }
+        
+        .timeline-bar-container { flex: 1; position: relative; height: 24px; }
+        
+        .timeline-bar {
+            position: absolute;
+            height: 20px;
+            border-radius: 4px;
+            top: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 500;
+            color: #fff;
+        }
+        
+        .timeline-bar.sd { background: #1E3A5F; }
+        .timeline-bar.dd { background: #3E2723; }
+        .timeline-bar.cd { background: #1B5E20; }
+        .timeline-bar.intake { background: #4A148C; }
+        .timeline-bar.permitting { background: #E65100; }
+        
+        /* Phase Cards */
+        .phases-section { margin-bottom: 24px; }
         
         .phase-card {
             background: #252525;
             border-radius: 12px;
             border: 1px solid #333;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             overflow: hidden;
         }
         
         .phase-header {
-            padding: 20px;
-            border-bottom: 1px solid #333;
+            padding: 16px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
+            border-bottom: 1px solid transparent;
         }
         
         .phase-header:hover { background: rgba(255,255,255,0.02); }
-        .phase-info { display: flex; align-items: center; gap: 16px; }
-        .phase-name { font-size: 16px; font-weight: 600; }
+        .phase-card:not(.collapsed) .phase-header { border-bottom-color: #333; }
+        
+        .phase-info { display: flex; align-items: center; gap: 12px; }
+        .phase-name { font-size: 15px; font-weight: 600; }
         
         .phase-tag {
-            font-size: 11px;
-            padding: 4px 10px;
+            font-size: 10px;
+            padding: 3px 8px;
             border-radius: 4px;
             font-weight: 500;
         }
@@ -166,108 +287,115 @@
         .phase-cd { background: #1B5E20; color: #81C784; }
         .phase-intake { background: #4A148C; color: #CE93D8; }
         .phase-permitting { background: #E65100; color: #FFB74D; }
-        .phase-complete { background: #1B5E20; color: #81C784; }
         .phase-default { background: #333; color: #888; }
         
-        .phase-stats { display: flex; align-items: center; gap: 24px; }
+        .phase-stats { display: flex; align-items: center; gap: 20px; }
         .phase-stat { text-align: right; }
-        .phase-stat-label { font-size: 10px; color: #666; text-transform: uppercase; }
-        .phase-stat-value { font-size: 14px; font-weight: 600; color: #C9A227; }
+        .phase-stat-label { font-size: 9px; color: #666; text-transform: uppercase; }
+        .phase-stat-value { font-size: 13px; font-weight: 600; color: #C9A227; }
+        .expand-icon { color: #666; transition: transform 0.2s; font-size: 12px; }
+        .phase-card.collapsed .expand-icon { transform: rotate(-90deg); }
         
-        .phase-progress { padding: 0 20px 16px; }
-        .phase-progress-bar { background: #333; border-radius: 8px; height: 8px; overflow: hidden; }
-        .phase-progress-fill { height: 100%; border-radius: 8px; transition: width 0.5s ease; }
+        .phase-content { padding: 16px 20px; }
+        .phase-card.collapsed .phase-content { display: none; }
         
+        .phase-progress-bar { background: #333; border-radius: 6px; height: 6px; margin-bottom: 12px; }
+        .phase-progress-fill { height: 100%; border-radius: 6px; }
         .progress-green { background: linear-gradient(90deg, #4CAF50, #81C784); }
         .progress-yellow { background: linear-gradient(90deg, #FF9800, #FFB74D); }
         .progress-red { background: linear-gradient(90deg, #f44336, #E57373); }
         
-        .phase-progress-text {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 8px;
-            font-size: 11px;
-            color: #666;
-        }
+        .phase-progress-text { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-bottom: 16px; }
         
-        .tasks-list { padding: 0 20px 20px; }
-        .tasks-header { font-size: 12px; color: #888; margin-bottom: 12px; }
+        .tasks-header { font-size: 12px; color: #888; margin-bottom: 10px; }
         
         .task-row {
             display: grid;
-            grid-template-columns: 24px 1fr 80px 80px;
+            grid-template-columns: 20px 1fr 70px 70px 80px;
             align-items: center;
-            gap: 12px;
-            padding: 10px 0;
+            gap: 10px;
+            padding: 8px 0;
             border-bottom: 1px solid #2a2a2a;
-            font-size: 13px;
+            font-size: 12px;
         }
         
         .task-row:last-child { border-bottom: none; }
         
         .task-checkbox {
-            width: 18px; height: 18px;
-            border-radius: 4px;
+            width: 16px; height: 16px;
+            border-radius: 3px;
             border: 2px solid #444;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         
         .task-checkbox.done { background: #4CAF50; border-color: #4CAF50; }
-        .task-checkbox.done::after { content: '✓'; color: white; font-size: 12px; }
-        .task-checkbox.in-progress { border-color: #FF9800; background: rgba(255, 152, 0, 0.2); }
+        .task-checkbox.in-progress { border-color: #FF9800; background: rgba(255,152,0,0.2); }
         
         .task-name { color: #ddd; }
         .task-name.done { text-decoration: line-through; color: #666; }
+        .task-name.overdue { color: #f44336; }
+        .task-name.due-soon { color: #FF9800; }
+        
         .task-effort { color: #888; text-align: right; }
+        .task-due { font-size: 11px; color: #888; }
+        .task-due.overdue { color: #f44336; font-weight: 600; }
+        .task-due.due-soon { color: #FF9800; }
         
         .task-status {
-            font-size: 10px;
-            padding: 3px 8px;
-            border-radius: 10px;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 8px;
             text-align: center;
             font-weight: 500;
         }
         
-        .status-done { background: rgba(76, 175, 80, 0.2); color: #4CAF50; }
-        .status-in-progress { background: rgba(255, 152, 0, 0.2); color: #FF9800; }
-        .status-not-started { background: rgba(156, 163, 175, 0.2); color: #9CA3AF; }
-        .status-in-review { background: rgba(139, 92, 246, 0.2); color: #8B5CF6; }
+        .status-done { background: rgba(76,175,80,0.2); color: #4CAF50; }
+        .status-in-progress { background: rgba(255,152,0,0.2); color: #FF9800; }
+        .status-not-started { background: rgba(156,163,175,0.2); color: #9CA3AF; }
+        .status-in-review { background: rgba(139,92,246,0.2); color: #8B5CF6; }
         
-        .no-tasks { color: #555; font-size: 13px; font-style: italic; padding: 10px 0; }
-        .expand-icon { color: #666; transition: transform 0.2s; }
-        .phase-card.collapsed .tasks-list { display: none; }
-        .phase-card.collapsed .expand-icon { transform: rotate(-90deg); }
+        .no-tasks { color: #555; font-size: 12px; font-style: italic; padding: 8px 0; }
         
-        .unassigned-section {
+        /* Other Tasks Section */
+        .other-tasks {
             background: #252525;
             border-radius: 12px;
             border: 1px solid #333;
             padding: 20px;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
         
-        .unassigned-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: #888; }
         .last-updated { font-size: 11px; color: #555; text-align: right; margin-top: 16px; }
         
         .error-banner {
-            background: rgba(244, 67, 54, 0.1);
-            border: 1px solid rgba(244, 67, 54, 0.3);
-            border-radius: 8px;
-            padding: 16px;
+            background: rgba(244,67,54,0.1);
+            border: 1px solid rgba(244,67,54,0.3);
+            border-radius: 12px;
+            padding: 20px;
             color: #f44336;
             margin-bottom: 24px;
         }
         
-        .no-data-message { text-align: center; padding: 60px; color: #666; }
-        .no-data-message h3 { margin-bottom: 8px; color: #888; }
+        .no-data { text-align: center; padding: 40px; color: #666; }
         
-        @media (max-width: 900px) {
+        /* Responsive */
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            .header { flex-direction: column; align-items: flex-start; }
             .summary-cards { grid-template-columns: repeat(2, 1fr); }
-            .charts-section { grid-template-columns: 1fr; }
-            .task-row { grid-template-columns: 24px 1fr 60px; }
-            .task-effort { display: none; }
+            .budget-alert-row { grid-template-columns: 1fr 80px; }
+            .budget-alert-row > *:nth-child(3) { display: none; }
+            .task-row { grid-template-columns: 20px 1fr 60px; }
+            .task-due, .task-effort { display: none; }
+        }
+        
+        /* Print / PDF styles */
+        @media print {
+            body { background: #fff; color: #000; }
+            .card, .chart-card, .phase-card, .budget-alerts, .timeline-section, .other-tasks {
+                background: #fff;
+                border-color: #ddd;
+            }
+            .btn { display: none; }
         }
     </style>
 </head>
@@ -284,11 +412,12 @@
         
         const urlParams = new URLSearchParams(window.location.search);
         const filterUser = urlParams.get('user');
+        const filterProject = urlParams.get('project');
+        const filterPhase = urlParams.get('phase');
+        const isLeadership = urlParams.get('view') === 'leadership';
 
         let dashboardData = null;
         let filteredData = null;
-        let hoursChart = null;
-        let phaseChart = null;
 
         async function fetchData() {
             try {
@@ -297,72 +426,123 @@
                 dashboardData = await response.json();
                 if (dashboardData.error) throw new Error(dashboardData.error);
                 
-                if (filterUser) {
-                    filterDataByUser();
-                } else {
-                    filteredData = dashboardData;
-                }
-                
+                applyFilters();
                 renderDashboard();
             } catch (error) {
                 document.getElementById('app').innerHTML = `
                     <div class="header">
                         <div class="header-left"><h1>📊 Studio RNB Dashboard</h1></div>
-                        <button class="refresh-btn" onclick="fetchData()">🔄 Retry</button>
+                        <button class="btn" onclick="fetchData()">🔄 Retry</button>
                     </div>
                     <div class="error-banner"><strong>Error:</strong> ${error.message}</div>
                 `;
             }
         }
 
-        function filterDataByUser() {
-            const userLower = filterUser.toLowerCase();
+        function applyFilters() {
+            let phases = [...dashboardData.phases];
+            let tasks = [...dashboardData.tasks];
             
-            // Filter phases by teamMember field
-            const userPhases = dashboardData.phases.filter(phase => {
-                return phase.teamMember && phase.teamMember.toLowerCase().includes(userLower);
-            });
+            // Filter by user
+            if (filterUser) {
+                const userLower = filterUser.toLowerCase();
+                phases = phases.filter(p => p.teamMember && p.teamMember.toLowerCase().includes(userLower));
+                const phaseIds = phases.map(p => p.id);
+                tasks = tasks.filter(t => {
+                    const ownerMatch = t.owner && t.owner.toLowerCase().includes(userLower);
+                    const phaseMatch = t.phaseId && phaseIds.includes(t.phaseId);
+                    return ownerMatch || phaseMatch;
+                });
+            }
             
-            // Get phase IDs for this user
-            const userPhaseIds = userPhases.map(p => p.id);
+            // Filter by project
+            if (filterProject) {
+                const projLower = filterProject.toLowerCase();
+                phases = phases.filter(p => 
+                    p.projectName.toLowerCase().includes(projLower) || 
+                    p.displayName.toLowerCase().includes(projLower) ||
+                    p.entry.toLowerCase().includes(projLower)
+                );
+                const phaseIds = phases.map(p => p.id);
+                tasks = tasks.filter(t => t.phaseId && phaseIds.includes(t.phaseId));
+            }
             
-            // Filter tasks by owner OR by being assigned to user's phases
-            const userTasks = dashboardData.tasks.filter(task => {
-                const ownerMatch = task.owner && task.owner.toLowerCase().includes(userLower);
-                const phaseMatch = task.phaseId && userPhaseIds.includes(task.phaseId);
-                return ownerMatch || phaseMatch;
-            });
+            // Filter by phase type
+            if (filterPhase) {
+                const phaseLower = filterPhase.toLowerCase();
+                phases = phases.filter(p => p.phase.toLowerCase().includes(phaseLower));
+                const phaseIds = phases.map(p => p.id);
+                tasks = tasks.filter(t => t.phaseId && phaseIds.includes(t.phaseId));
+            }
             
             // Recalculate totals
-            let totalAllocated = 0;
-            let totalLogged = 0;
+            let totalAllocated = 0, totalLogged = 0;
             const phaseBreakdown = {};
+            const teamWorkload = {};
             
-            userPhases.forEach(phase => {
+            phases.forEach(phase => {
                 totalAllocated += phase.hoursAllocated || 0;
                 totalLogged += phase.hoursLogged || 0;
                 
-                phase.tasks = userTasks.filter(t => t.phaseId === phase.id);
+                phase.tasks = tasks.filter(t => t.phaseId === phase.id);
                 phase.taskHoursTotal = phase.tasks.reduce((sum, t) => sum + (t.effort || 0), 0);
                 
                 if (!phaseBreakdown[phase.phase]) phaseBreakdown[phase.phase] = 0;
                 phaseBreakdown[phase.phase] += phase.hoursLogged || 0;
+                
+                if (phase.teamMember) {
+                    if (!teamWorkload[phase.teamMember]) teamWorkload[phase.teamMember] = { allocated: 0, logged: 0 };
+                    teamWorkload[phase.teamMember].allocated += phase.hoursAllocated || 0;
+                    teamWorkload[phase.teamMember].logged += phase.hoursLogged || 0;
+                }
             });
             
+            // Task status breakdown
+            const taskStatusBreakdown = { done: 0, inProgress: 0, notStarted: 0, inReview: 0 };
+            let overdueTasks = 0, dueSoonTasks = 0;
+            
+            tasks.forEach(t => {
+                const s = t.status.toLowerCase();
+                if (s === 'done') taskStatusBreakdown.done++;
+                else if (s === 'in progress') taskStatusBreakdown.inProgress++;
+                else if (s === 'in review') taskStatusBreakdown.inReview++;
+                else taskStatusBreakdown.notStarted++;
+                
+                if (t.dueDateStatus === 'overdue') overdueTasks++;
+                if (t.dueDateStatus === 'dueSoon') dueSoonTasks++;
+            });
+            
+            // Budget alerts
+            const budgetAlerts = phases
+                .filter(p => p.percentage >= 80 && p.hoursAllocated > 0)
+                .sort((a, b) => b.percentage - a.percentage);
+            
             filteredData = {
-                phases: userPhases,
-                tasks: userTasks,
-                totalAllocated: totalAllocated,
-                totalLogged: totalLogged,
+                phases,
+                tasks,
+                totalAllocated,
+                totalLogged,
                 totalRemaining: totalAllocated - totalLogged,
-                projectCount: new Set(userPhases.map(p => p.displayName)).size,
-                phaseBreakdown: phaseBreakdown
+                projectCount: new Set(phases.map(p => p.projectName)).size,
+                phaseBreakdown,
+                teamWorkload: filterUser ? teamWorkload : dashboardData.teamWorkload,
+                taskStatusBreakdown,
+                budgetAlerts,
+                thisWeekHours: dashboardData.thisWeekHours,
+                lastWeekHours: dashboardData.lastWeekHours,
+                overdueTasks,
+                dueSoonTasks,
             };
         }
 
         function getPhaseClass(phase) {
-            const map = { 'SD': 'phase-sd', 'DD': 'phase-dd', 'CD': 'phase-cd', 'Client Intake': 'phase-intake', 'Permitting': 'phase-permitting', 'Complete': 'phase-complete' };
+            const map = { 'SD': 'phase-sd', 'DD': 'phase-dd', 'CD': 'phase-cd', 'Client Intake': 'phase-intake', 'Permitting': 'phase-permitting' };
             return map[phase] || 'phase-default';
+        }
+
+        function getTimelineClass(phase) {
+            const map = { 'SD': 'sd', 'DD': 'dd', 'CD': 'cd', 'Client Intake': 'intake', 'Permitting': 'permitting' };
+            return map[phase] || '';
         }
 
         function getProgressClass(pct) {
@@ -379,178 +559,346 @@
             return 'status-not-started';
         }
 
-        function getCheckboxClass(status) {
-            const s = status.toLowerCase();
-            if (s === 'done') return 'done';
-            if (s === 'in progress') return 'in-progress';
-            return '';
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function exportToPDF() {
+            const element = document.getElementById('app');
+            const opt = {
+                margin: 10,
+                filename: 'studio-rnb-dashboard.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, backgroundColor: '#191919' },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+            html2pdf().set(opt).from(element).save();
         }
 
         function renderDashboard() {
             const data = filteredData;
-            
-            if (filterUser && data.phases.length === 0 && data.tasks.length === 0) {
-                document.getElementById('app').innerHTML = `
-                    <div class="header">
-                        <div class="header-left">
-                            <h1>📊 My Dashboard</h1>
-                            <span class="user-badge">${filterUser}</span>
-                        </div>
-                        <button class="refresh-btn" onclick="fetchData()">🔄 Refresh</button>
-                    </div>
-                    <div class="no-data-message">
-                        <h3>No phases or tasks found</h3>
-                        <p>No data assigned to ${filterUser} yet.</p>
-                    </div>
-                `;
-                return;
-            }
-            
             const completionPct = data.totalAllocated > 0 ? Math.round((data.totalLogged / data.totalAllocated) * 100) : 0;
             
-            const userPhaseIds = data.phases.map(p => p.id);
-            const unassignedTasks = data.tasks.filter(t => !t.phaseId || !userPhaseIds.includes(t.phaseId));
+            // Determine title and badges
+            let title = 'Studio RNB Dashboard';
+            let badges = '<div class="badge live-badge"><span class="live-dot"></span> Live</div>';
             
-            let phasesHTML = '';
-            data.phases.forEach(phase => {
-                const pct = phase.percentage || 0;
-                const progressClass = getProgressClass(pct);
-                const phaseClass = getPhaseClass(phase.phase);
-                
-                let tasksHTML = '';
-                if (phase.tasks && phase.tasks.length > 0) {
-                    phase.tasks.forEach(task => {
-                        const statusClass = getStatusClass(task.status);
-                        const checkboxClass = getCheckboxClass(task.status);
-                        const nameClass = task.status.toLowerCase() === 'done' ? 'done' : '';
-                        tasksHTML += `
-                            <div class="task-row">
-                                <div class="task-checkbox ${checkboxClass}"></div>
-                                <div class="task-name ${nameClass}">${task.action}</div>
-                                <div class="task-effort">${task.effort || '-'} hrs</div>
-                                <div class="task-status ${statusClass}">${task.status}</div>
-                            </div>
-                        `;
-                    });
-                } else {
-                    tasksHTML = '<div class="no-tasks">No tasks assigned to this phase</div>';
-                }
-                
-                phasesHTML += `
-                    <div class="phase-card">
-                        <div class="phase-header" onclick="this.parentElement.classList.toggle('collapsed')">
-                            <div class="phase-info">
-                                <span class="phase-name">${phase.displayName}</span>
-                                <span class="phase-tag ${phaseClass}">${phase.phase}</span>
-                            </div>
-                            <div class="phase-stats">
-                                <div class="phase-stat">
-                                    <div class="phase-stat-label">Budget</div>
-                                    <div class="phase-stat-value">${phase.hoursAllocated} hrs</div>
-                                </div>
-                                <div class="phase-stat">
-                                    <div class="phase-stat-label">Logged</div>
-                                    <div class="phase-stat-value">${phase.hoursLogged} hrs</div>
-                                </div>
-                                <div class="phase-stat">
-                                    <div class="phase-stat-label">Tasks</div>
-                                    <div class="phase-stat-value">${phase.tasks ? phase.tasks.length : 0}</div>
-                                </div>
-                                <span class="expand-icon">▼</span>
-                            </div>
-                        </div>
-                        <div class="phase-progress">
-                            <div class="phase-progress-bar">
-                                <div class="phase-progress-fill ${progressClass}" style="width: ${Math.min(pct, 100)}%"></div>
-                            </div>
-                            <div class="phase-progress-text">
-                                <span>${phase.taskHoursTotal || 0} hrs assigned to tasks</span>
-                                <span>${Math.round(pct)}% used</span>
-                            </div>
-                        </div>
-                        <div class="tasks-list">
-                            <div class="tasks-header">📋 Tasks (${phase.tasks ? phase.tasks.length : 0})</div>
-                            ${tasksHTML}
+            if (filterUser) {
+                title = 'My Dashboard';
+                badges = `<span class="badge user-badge">${filterUser}</span>` + badges;
+            }
+            if (isLeadership) {
+                title = 'Leadership Dashboard';
+                badges = `<span class="badge leadership-badge">Leadership</span>` + badges;
+            }
+            if (filterProject) {
+                badges += `<span class="badge user-badge">Project: ${filterProject}</span>`;
+            }
+            if (filterPhase) {
+                badges += `<span class="badge user-badge">Phase: ${filterPhase}</span>`;
+            }
+            
+            // Alert banners
+            let alertsHTML = '';
+            if (data.overdueTasks > 0) {
+                alertsHTML += `
+                    <div class="alert-banner">
+                        <span class="alert-icon">🚨</span>
+                        <div class="alert-content">
+                            <div class="alert-title">${data.overdueTasks} Overdue Task${data.overdueTasks > 1 ? 's' : ''}</div>
+                            <div class="alert-text">Tasks that have passed their due date</div>
                         </div>
                     </div>
                 `;
-            });
+            }
+            if (data.dueSoonTasks > 0) {
+                alertsHTML += `
+                    <div class="alert-banner warning">
+                        <span class="alert-icon">⚠️</span>
+                        <div class="alert-content">
+                            <div class="alert-title">${data.dueSoonTasks} Task${data.dueSoonTasks > 1 ? 's' : ''} Due Soon</div>
+                            <div class="alert-text">Due within the next 3 days</div>
+                        </div>
+                    </div>
+                `;
+            }
             
+            // Budget alerts section (leadership only)
+            let budgetAlertsHTML = '';
+            if ((isLeadership || !filterUser) && data.budgetAlerts.length > 0) {
+                let alertRows = data.budgetAlerts.slice(0, 5).map(a => {
+                    const pctClass = a.percentage >= 100 ? 'danger' : 'warning';
+                    return `
+                        <div class="budget-alert-row">
+                            <div>
+                                <div class="budget-alert-name">${a.displayName}</div>
+                                <div class="budget-alert-phase">${a.phase} • ${a.teamMember || 'Unassigned'}</div>
+                            </div>
+                            <div>${a.hoursLogged}/${a.hoursAllocated} hrs</div>
+                            <div class="budget-bar"><div class="budget-bar-fill ${pctClass}" style="width:${Math.min(a.percentage, 100)}%"></div></div>
+                            <div class="budget-pct ${pctClass}">${Math.round(a.percentage)}%</div>
+                        </div>
+                    `;
+                }).join('');
+                
+                budgetAlertsHTML = `
+                    <div class="budget-alerts">
+                        <div class="section-title">🔥 Budget Alerts</div>
+                        ${alertRows}
+                    </div>
+                `;
+            }
+            
+            // Weekly comparison (leadership only)
+            let weeklyCompareHTML = '';
+            if (isLeadership || !filterUser) {
+                const weekDiff = data.thisWeekHours - data.lastWeekHours;
+                const weekTrend = weekDiff >= 0 ? 'up' : 'down';
+                const weekTrendText = weekDiff >= 0 ? `↑ ${weekDiff} more than last week` : `↓ ${Math.abs(weekDiff)} less than last week`;
+                
+                weeklyCompareHTML = `
+                    <div class="card">
+                        <div class="card-label">This Week</div>
+                        <div class="card-value blue">${data.thisWeekHours}</div>
+                        <div class="card-subtitle">Hours logged</div>
+                        <div class="card-trend ${weekTrend}">${weekTrendText}</div>
+                    </div>
+                `;
+            }
+            
+            // Team workload chart (leadership only)
+            let teamWorkloadHTML = '';
+            if ((isLeadership || !filterUser) && Object.keys(data.teamWorkload).length > 0) {
+                teamWorkloadHTML = `
+                    <div class="chart-card">
+                        <h3>👥 Team Workload</h3>
+                        <div class="chart-container tall"><canvas id="teamChart"></canvas></div>
+                    </div>
+                `;
+            }
+            
+            // Task status chart
+            let taskStatusHTML = '';
+            if (data.tasks.length > 0) {
+                taskStatusHTML = `
+                    <div class="chart-card">
+                        <h3>📋 Task Status</h3>
+                        <div class="chart-container"><canvas id="statusChart"></canvas></div>
+                    </div>
+                `;
+            }
+            
+            // Timeline/Gantt (only show phases with dates)
+            let timelineHTML = '';
+            const phasesWithDates = data.phases.filter(p => p.startDate && p.endDate);
+            if (phasesWithDates.length > 0) {
+                const allDates = phasesWithDates.flatMap(p => [new Date(p.startDate), new Date(p.endDate)]);
+                const minDate = new Date(Math.min(...allDates));
+                const maxDate = new Date(Math.max(...allDates));
+                const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)) || 1;
+                
+                // Generate month headers
+                const months = [];
+                let current = new Date(minDate);
+                while (current <= maxDate) {
+                    months.push(current.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+                    current.setMonth(current.getMonth() + 1);
+                }
+                
+                const monthHeaders = months.map(m => `<div class="timeline-month">${m}</div>`).join('');
+                
+                const timelineRows = phasesWithDates.map(p => {
+                    const start = new Date(p.startDate);
+                    const end = new Date(p.endDate);
+                    const left = ((start - minDate) / (1000 * 60 * 60 * 24)) / totalDays * 100;
+                    const width = Math.max(((end - start) / (1000 * 60 * 60 * 24)) / totalDays * 100, 5);
+                    const barClass = getTimelineClass(p.phase);
+                    
+                    return `
+                        <div class="timeline-row">
+                            <div class="timeline-project">${p.displayName}</div>
+                            <div class="timeline-bar-container">
+                                <div class="timeline-bar ${barClass}" style="left:${left}%;width:${width}%">${p.phase}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                timelineHTML = `
+                    <div class="timeline-section">
+                        <div class="section-title">📅 Project Timeline</div>
+                        <div class="timeline-container">
+                            <div class="timeline-header">
+                                <div class="timeline-label">Project</div>
+                                <div class="timeline-months">${monthHeaders}</div>
+                            </div>
+                            ${timelineRows}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Phase cards
+            let phasesHTML = '';
+            if (data.phases.length > 0) {
+                phasesHTML = data.phases.map(phase => {
+                    const pct = phase.percentage || 0;
+                    const progressClass = getProgressClass(pct);
+                    const phaseClass = getPhaseClass(phase.phase);
+                    
+                    let tasksHTML = '';
+                    if (phase.tasks && phase.tasks.length > 0) {
+                        tasksHTML = phase.tasks.map(task => {
+                            const statusClass = getStatusClass(task.status);
+                            const checkboxClass = task.status.toLowerCase() === 'done' ? 'done' : (task.status.toLowerCase() === 'in progress' ? 'in-progress' : '');
+                            const nameClass = task.status.toLowerCase() === 'done' ? 'done' : (task.dueDateStatus === 'overdue' ? 'overdue' : (task.dueDateStatus === 'dueSoon' ? 'due-soon' : ''));
+                            const dueClass = task.dueDateStatus === 'overdue' ? 'overdue' : (task.dueDateStatus === 'dueSoon' ? 'due-soon' : '');
+                            
+                            return `
+                                <div class="task-row">
+                                    <div class="task-checkbox ${checkboxClass}"></div>
+                                    <div class="task-name ${nameClass}">${task.action}</div>
+                                    <div class="task-effort">${task.effort || '-'} hrs</div>
+                                    <div class="task-due ${dueClass}">${formatDate(task.dueDate)}</div>
+                                    <div class="task-status ${statusClass}">${task.status}</div>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        tasksHTML = '<div class="no-tasks">No tasks assigned</div>';
+                    }
+                    
+                    return `
+                        <div class="phase-card">
+                            <div class="phase-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                                <div class="phase-info">
+                                    <span class="phase-name">${phase.displayName}</span>
+                                    <span class="phase-tag ${phaseClass}">${phase.phase}</span>
+                                </div>
+                                <div class="phase-stats">
+                                    <div class="phase-stat">
+                                        <div class="phase-stat-label">Budget</div>
+                                        <div class="phase-stat-value">${phase.hoursAllocated}h</div>
+                                    </div>
+                                    <div class="phase-stat">
+                                        <div class="phase-stat-label">Logged</div>
+                                        <div class="phase-stat-value">${phase.hoursLogged}h</div>
+                                    </div>
+                                    <div class="phase-stat">
+                                        <div class="phase-stat-label">Tasks</div>
+                                        <div class="phase-stat-value">${phase.tasks?.length || 0}</div>
+                                    </div>
+                                    <span class="expand-icon">▼</span>
+                                </div>
+                            </div>
+                            <div class="phase-content">
+                                <div class="phase-progress-bar">
+                                    <div class="phase-progress-fill ${progressClass}" style="width:${Math.min(pct,100)}%"></div>
+                                </div>
+                                <div class="phase-progress-text">
+                                    <span>${phase.taskHoursTotal || 0}h assigned to tasks</span>
+                                    <span>${Math.round(pct)}% used</span>
+                                </div>
+                                <div class="tasks-header">📋 Tasks (${phase.tasks?.length || 0})</div>
+                                ${tasksHTML}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                phasesHTML = '<div class="no-data">No phases found</div>';
+            }
+            
+            // Unassigned tasks
+            const phaseIds = data.phases.map(p => p.id);
+            const unassignedTasks = data.tasks.filter(t => !t.phaseId || !phaseIds.includes(t.phaseId));
             let unassignedHTML = '';
             if (unassignedTasks.length > 0) {
-                let unassignedTasksHTML = '';
-                unassignedTasks.forEach(task => {
+                const rows = unassignedTasks.map(task => {
                     const statusClass = getStatusClass(task.status);
-                    const checkboxClass = getCheckboxClass(task.status);
-                    unassignedTasksHTML += `
+                    const dueClass = task.dueDateStatus === 'overdue' ? 'overdue' : (task.dueDateStatus === 'dueSoon' ? 'due-soon' : '');
+                    return `
                         <div class="task-row">
-                            <div class="task-checkbox ${checkboxClass}"></div>
+                            <div class="task-checkbox"></div>
                             <div class="task-name">${task.action}</div>
                             <div class="task-effort">${task.effort || '-'} hrs</div>
+                            <div class="task-due ${dueClass}">${formatDate(task.dueDate)}</div>
                             <div class="task-status ${statusClass}">${task.status}</div>
                         </div>
                     `;
-                });
+                }).join('');
+                
                 unassignedHTML = `
-                    <div class="unassigned-section">
-                        <h3>📌 Other Tasks (${unassignedTasks.length})</h3>
-                        ${unassignedTasksHTML}
+                    <div class="other-tasks">
+                        <div class="section-title">📌 Unassigned Tasks (${unassignedTasks.length})</div>
+                        ${rows}
                     </div>
                 `;
             }
 
-            const titleText = filterUser ? 'My Dashboard' : 'Studio RNB Dashboard';
-            const userBadge = filterUser ? `<span class="user-badge">${filterUser}</span>` : '';
-
+            // Render
             document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="header-left">
-                        <h1>📊 ${titleText}</h1>
-                        ${userBadge}
-                        <div class="live-badge"><span class="live-dot"></span> Live</div>
+                        <h1>📊 ${title}</h1>
+                        ${badges}
                     </div>
-                    <button class="refresh-btn" onclick="refreshData(this)">🔄 Refresh</button>
+                    <div class="header-actions">
+                        <button class="btn" onclick="refreshData(this)">🔄 Refresh</button>
+                        <button class="btn btn-primary" onclick="exportToPDF()">📄 Export PDF</button>
+                    </div>
                 </div>
+                
+                ${alertsHTML}
                 
                 <div class="summary-cards">
                     <div class="card">
                         <div class="card-label">Hours Allocated</div>
-                        <div class="card-value allocated">${data.totalAllocated}</div>
+                        <div class="card-value gold">${data.totalAllocated}</div>
                         <div class="card-subtitle">Total budget</div>
                     </div>
                     <div class="card">
                         <div class="card-label">Hours Logged</div>
-                        <div class="card-value logged">${data.totalLogged}</div>
+                        <div class="card-value green">${data.totalLogged}</div>
                         <div class="card-subtitle">${completionPct}% used</div>
                     </div>
                     <div class="card">
                         <div class="card-label">Hours Remaining</div>
-                        <div class="card-value remaining ${data.totalRemaining < 0 ? 'negative' : ''}">${Math.abs(data.totalRemaining)}</div>
+                        <div class="card-value ${data.totalRemaining < 0 ? 'red' : 'blue'}">${Math.abs(data.totalRemaining)}</div>
                         <div class="card-subtitle">${data.totalRemaining >= 0 ? 'Available' : 'Over budget'}</div>
                     </div>
                     <div class="card">
-                        <div class="card-label">My Tasks</div>
-                        <div class="card-value projects">${data.tasks.length}</div>
+                        <div class="card-label">Tasks</div>
+                        <div class="card-value purple">${data.tasks.length}</div>
                         <div class="card-subtitle">${data.phases.length} phases</div>
                     </div>
+                    ${weeklyCompareHTML}
                 </div>
                 
-                <div class="charts-section">
+                ${budgetAlertsHTML}
+                
+                <div class="charts-grid">
                     <div class="chart-card">
-                        <h3>Hours Breakdown</h3>
+                        <h3>⏱️ Hours Breakdown</h3>
                         <div class="chart-container"><canvas id="hoursChart"></canvas></div>
                     </div>
                     <div class="chart-card">
-                        <h3>Hours by Phase</h3>
+                        <h3>📊 Hours by Phase</h3>
                         <div class="chart-container"><canvas id="phaseChart"></canvas></div>
                     </div>
+                    ${taskStatusHTML}
+                    ${teamWorkloadHTML}
                 </div>
+                
+                ${timelineHTML}
                 
                 ${unassignedHTML}
                 
                 <div class="phases-section">
-                    <h2>📁 My Phases & Tasks</h2>
-                    ${phasesHTML || '<div class="no-tasks">No phases assigned yet</div>'}
+                    <div class="section-title">📁 Phases & Tasks</div>
+                    ${phasesHTML}
                 </div>
                 
                 <div class="last-updated">Last updated: ${new Date().toLocaleString()}</div>
@@ -567,12 +915,11 @@
 
         function initCharts() {
             const data = filteredData;
-            if (hoursChart) hoursChart.destroy();
-            if (phaseChart) phaseChart.destroy();
-
+            
+            // Hours Donut
             const hoursCtx = document.getElementById('hoursChart');
             if (hoursCtx) {
-                hoursChart = new Chart(hoursCtx.getContext('2d'), {
+                new Chart(hoursCtx.getContext('2d'), {
                     type: 'doughnut',
                     data: {
                         labels: ['Logged', 'Remaining'],
@@ -586,31 +933,83 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { position: 'bottom', labels: { color: '#888', padding: 20 } } }
+                        plugins: { legend: { position: 'bottom', labels: { color: '#888', padding: 15, font: { size: 11 } } } }
                     }
                 });
             }
-
+            
+            // Phase Bar
             const phaseCtx = document.getElementById('phaseChart');
             if (phaseCtx && Object.keys(data.phaseBreakdown).length > 0) {
-                const colors = { 'SD': '#64B5F6', 'DD': '#FFAB91', 'CD': '#81C784', 'Client Intake': '#CE93D8', 'Permitting': '#FFB74D', 'Complete': '#81C784' };
+                const colors = { 'SD': '#64B5F6', 'DD': '#FFAB91', 'CD': '#81C784', 'Client Intake': '#CE93D8', 'Permitting': '#FFB74D' };
                 const labels = Object.keys(data.phaseBreakdown);
                 const values = Object.values(data.phaseBreakdown);
                 
-                phaseChart = new Chart(phaseCtx.getContext('2d'), {
+                new Chart(phaseCtx.getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: labels,
-                        datasets: [{ data: values, backgroundColor: labels.map(l => colors[l] || '#888'), borderRadius: 6 }]
+                        labels,
+                        datasets: [{ data: values, backgroundColor: labels.map(l => colors[l] || '#888'), borderRadius: 4 }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
-                            y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#888' } },
-                            x: { grid: { display: false }, ticks: { color: '#888' } }
+                            y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#888', font: { size: 10 } } },
+                            x: { grid: { display: false }, ticks: { color: '#888', font: { size: 10 } } }
                         },
                         plugins: { legend: { display: false } }
+                    }
+                });
+            }
+            
+            // Task Status Pie
+            const statusCtx = document.getElementById('statusChart');
+            if (statusCtx) {
+                const statusData = data.taskStatusBreakdown;
+                new Chart(statusCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Done', 'In Progress', 'In Review', 'Not Started'],
+                        datasets: [{
+                            data: [statusData.done, statusData.inProgress, statusData.inReview, statusData.notStarted],
+                            backgroundColor: ['#4CAF50', '#FF9800', '#8B5CF6', '#9CA3AF'],
+                            borderWidth: 0,
+                            cutout: '60%'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { color: '#888', padding: 10, font: { size: 10 } } } }
+                    }
+                });
+            }
+            
+            // Team Workload
+            const teamCtx = document.getElementById('teamChart');
+            if (teamCtx && Object.keys(data.teamWorkload).length > 0) {
+                const teamLabels = Object.keys(data.teamWorkload);
+                const allocated = teamLabels.map(t => data.teamWorkload[t].allocated);
+                const logged = teamLabels.map(t => data.teamWorkload[t].logged);
+                
+                new Chart(teamCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: teamLabels.map(l => l.split(' ')[0]), // First name only
+                        datasets: [
+                            { label: 'Allocated', data: allocated, backgroundColor: '#C9A227', borderRadius: 4 },
+                            { label: 'Logged', data: logged, backgroundColor: '#4CAF50', borderRadius: 4 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#888', font: { size: 10 } } },
+                            x: { grid: { display: false }, ticks: { color: '#888', font: { size: 10 } } }
+                        },
+                        plugins: { legend: { position: 'top', labels: { color: '#888', padding: 15, font: { size: 10 } } } }
                     }
                 });
             }
