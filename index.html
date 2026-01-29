@@ -6,11 +6,7 @@
     <title>Studio RNB - Time Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
@@ -20,10 +16,7 @@
             min-height: 100vh;
         }
         
-        .dashboard {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        .dashboard { max-width: 1200px; margin: 0 auto; }
         
         .header {
             display: flex;
@@ -32,17 +25,9 @@
             margin-bottom: 32px;
         }
         
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
+        .header-left { display: flex; align-items: center; gap: 16px; }
         
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
-            color: #C9A227;
-        }
+        .header h1 { font-size: 24px; font-weight: 600; color: #C9A227; }
         
         .user-badge {
             font-size: 12px;
@@ -64,17 +49,13 @@
         }
         
         .live-dot {
-            width: 6px;
-            height: 6px;
+            width: 6px; height: 6px;
             background: #4CAF50;
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
         
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         
         .refresh-btn {
             background: #333;
@@ -84,25 +65,14 @@
             border-radius: 8px;
             cursor: pointer;
             font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.2s;
         }
         
-        .refresh-btn:hover {
-            background: #444;
-        }
+        .refresh-btn:hover { background: #444; }
         
-        .loading {
-            text-align: center;
-            padding: 60px;
-            color: #888;
-        }
+        .loading { text-align: center; padding: 60px; color: #888; }
         
         .loading-spinner {
-            width: 40px;
-            height: 40px;
+            width: 40px; height: 40px;
             border: 3px solid #333;
             border-top-color: #C9A227;
             border-radius: 50%;
@@ -110,11 +80,8 @@
             margin: 0 auto 16px;
         }
         
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* Summary Cards */
         .summary-cards {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -137,24 +104,15 @@
             margin-bottom: 8px;
         }
         
-        .card-value {
-            font-size: 36px;
-            font-weight: 700;
-        }
-        
+        .card-value { font-size: 36px; font-weight: 700; }
         .card-value.allocated { color: #C9A227; }
         .card-value.logged { color: #4CAF50; }
         .card-value.remaining { color: #64B5F6; }
         .card-value.remaining.negative { color: #f44336; }
         .card-value.projects { color: #CE93D8; }
         
-        .card-subtitle {
-            font-size: 12px;
-            color: #666;
-            margin-top: 4px;
-        }
+        .card-subtitle { font-size: 12px; color: #666; margin-top: 4px; }
         
-        /* Charts Section */
         .charts-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -169,29 +127,11 @@
             border: 1px solid #333;
         }
         
-        .chart-card h3 {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #fff;
-        }
+        .chart-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 20px; color: #fff; }
+        .chart-container { position: relative; height: 200px; }
         
-        .chart-container {
-            position: relative;
-            height: 200px;
-        }
-        
-        /* Phase Cards with Tasks */
-        .phases-section {
-            margin-bottom: 32px;
-        }
-        
-        .phases-section h2 {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: #fff;
-        }
+        .phases-section { margin-bottom: 32px; }
+        .phases-section h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #fff; }
         
         .phase-card {
             background: #252525;
@@ -210,20 +150,9 @@
             cursor: pointer;
         }
         
-        .phase-header:hover {
-            background: rgba(255,255,255,0.02);
-        }
-        
-        .phase-info {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        
-        .phase-name {
-            font-size: 16px;
-            font-weight: 600;
-        }
+        .phase-header:hover { background: rgba(255,255,255,0.02); }
+        .phase-info { display: flex; align-items: center; gap: 16px; }
+        .phase-name { font-size: 16px; font-weight: 600; }
         
         .phase-tag {
             font-size: 11px;
@@ -240,44 +169,14 @@
         .phase-complete { background: #1B5E20; color: #81C784; }
         .phase-default { background: #333; color: #888; }
         
-        .phase-stats {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
+        .phase-stats { display: flex; align-items: center; gap: 24px; }
+        .phase-stat { text-align: right; }
+        .phase-stat-label { font-size: 10px; color: #666; text-transform: uppercase; }
+        .phase-stat-value { font-size: 14px; font-weight: 600; color: #C9A227; }
         
-        .phase-stat {
-            text-align: right;
-        }
-        
-        .phase-stat-label {
-            font-size: 10px;
-            color: #666;
-            text-transform: uppercase;
-        }
-        
-        .phase-stat-value {
-            font-size: 14px;
-            font-weight: 600;
-            color: #C9A227;
-        }
-        
-        .phase-progress {
-            padding: 0 20px 16px;
-        }
-        
-        .phase-progress-bar {
-            background: #333;
-            border-radius: 8px;
-            height: 8px;
-            overflow: hidden;
-        }
-        
-        .phase-progress-fill {
-            height: 100%;
-            border-radius: 8px;
-            transition: width 0.5s ease;
-        }
+        .phase-progress { padding: 0 20px 16px; }
+        .phase-progress-bar { background: #333; border-radius: 8px; height: 8px; overflow: hidden; }
+        .phase-progress-fill { height: 100%; border-radius: 8px; transition: width 0.5s ease; }
         
         .progress-green { background: linear-gradient(90deg, #4CAF50, #81C784); }
         .progress-yellow { background: linear-gradient(90deg, #FF9800, #FFB74D); }
@@ -291,19 +190,8 @@
             color: #666;
         }
         
-        /* Tasks List */
-        .tasks-list {
-            padding: 0 20px 20px;
-        }
-        
-        .tasks-header {
-            font-size: 12px;
-            color: #888;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .tasks-list { padding: 0 20px 20px; }
+        .tasks-header { font-size: 12px; color: #888; margin-bottom: 12px; }
         
         .task-row {
             display: grid;
@@ -315,13 +203,10 @@
             font-size: 13px;
         }
         
-        .task-row:last-child {
-            border-bottom: none;
-        }
+        .task-row:last-child { border-bottom: none; }
         
         .task-checkbox {
-            width: 18px;
-            height: 18px;
+            width: 18px; height: 18px;
             border-radius: 4px;
             border: 2px solid #444;
             display: flex;
@@ -329,35 +214,13 @@
             justify-content: center;
         }
         
-        .task-checkbox.done {
-            background: #4CAF50;
-            border-color: #4CAF50;
-        }
+        .task-checkbox.done { background: #4CAF50; border-color: #4CAF50; }
+        .task-checkbox.done::after { content: '✓'; color: white; font-size: 12px; }
+        .task-checkbox.in-progress { border-color: #FF9800; background: rgba(255, 152, 0, 0.2); }
         
-        .task-checkbox.done::after {
-            content: '✓';
-            color: white;
-            font-size: 12px;
-        }
-        
-        .task-checkbox.in-progress {
-            border-color: #FF9800;
-            background: rgba(255, 152, 0, 0.2);
-        }
-        
-        .task-name {
-            color: #ddd;
-        }
-        
-        .task-name.done {
-            text-decoration: line-through;
-            color: #666;
-        }
-        
-        .task-effort {
-            color: #888;
-            text-align: right;
-        }
+        .task-name { color: #ddd; }
+        .task-name.done { text-decoration: line-through; color: #666; }
+        .task-effort { color: #888; text-align: right; }
         
         .task-status {
             font-size: 10px;
@@ -372,27 +235,11 @@
         .status-not-started { background: rgba(156, 163, 175, 0.2); color: #9CA3AF; }
         .status-in-review { background: rgba(139, 92, 246, 0.2); color: #8B5CF6; }
         
-        .no-tasks {
-            color: #555;
-            font-size: 13px;
-            font-style: italic;
-            padding: 10px 0;
-        }
+        .no-tasks { color: #555; font-size: 13px; font-style: italic; padding: 10px 0; }
+        .expand-icon { color: #666; transition: transform 0.2s; }
+        .phase-card.collapsed .tasks-list { display: none; }
+        .phase-card.collapsed .expand-icon { transform: rotate(-90deg); }
         
-        .expand-icon {
-            color: #666;
-            transition: transform 0.2s;
-        }
-        
-        .phase-card.collapsed .tasks-list {
-            display: none;
-        }
-        
-        .phase-card.collapsed .expand-icon {
-            transform: rotate(-90deg);
-        }
-        
-        /* Unassigned Tasks */
         .unassigned-section {
             background: #252525;
             border-radius: 12px;
@@ -401,19 +248,8 @@
             margin-bottom: 32px;
         }
         
-        .unassigned-section h3 {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: #888;
-        }
-        
-        .last-updated {
-            font-size: 11px;
-            color: #555;
-            text-align: right;
-            margin-top: 16px;
-        }
+        .unassigned-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: #888; }
+        .last-updated { font-size: 11px; color: #555; text-align: right; margin-top: 16px; }
         
         .error-banner {
             background: rgba(244, 67, 54, 0.1);
@@ -424,31 +260,14 @@
             margin-bottom: 24px;
         }
         
-        .no-data-message {
-            text-align: center;
-            padding: 60px;
-            color: #666;
-        }
+        .no-data-message { text-align: center; padding: 60px; color: #666; }
+        .no-data-message h3 { margin-bottom: 8px; color: #888; }
         
-        .no-data-message h3 {
-            margin-bottom: 8px;
-            color: #888;
-        }
-        
-        /* Responsive */
         @media (max-width: 900px) {
-            .summary-cards {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .charts-section {
-                grid-template-columns: 1fr;
-            }
-            .task-row {
-                grid-template-columns: 24px 1fr 60px;
-            }
-            .task-effort {
-                display: none;
-            }
+            .summary-cards { grid-template-columns: repeat(2, 1fr); }
+            .charts-section { grid-template-columns: 1fr; }
+            .task-row { grid-template-columns: 24px 1fr 60px; }
+            .task-effort { display: none; }
         }
     </style>
 </head>
@@ -463,7 +282,6 @@
     <script>
         const API_URL = 'https://studio-rnb-api.jbridges-c38.workers.dev';
         
-        // Get user from URL parameter
         const urlParams = new URLSearchParams(window.location.search);
         const filterUser = urlParams.get('user');
 
@@ -479,7 +297,6 @@
                 dashboardData = await response.json();
                 if (dashboardData.error) throw new Error(dashboardData.error);
                 
-                // Filter data if user parameter exists
                 if (filterUser) {
                     filterDataByUser();
                 } else {
@@ -501,9 +318,9 @@
         function filterDataByUser() {
             const userLower = filterUser.toLowerCase();
             
-            // Filter phases by team member (check entry field for name)
+            // Filter phases by teamMember field
             const userPhases = dashboardData.phases.filter(phase => {
-                return phase.entry.toLowerCase().includes(userLower);
+                return phase.teamMember && phase.teamMember.toLowerCase().includes(userLower);
             });
             
             // Get phase IDs for this user
@@ -516,7 +333,7 @@
                 return ownerMatch || phaseMatch;
             });
             
-            // Recalculate totals for filtered data
+            // Recalculate totals
             let totalAllocated = 0;
             let totalLogged = 0;
             const phaseBreakdown = {};
@@ -525,13 +342,10 @@
                 totalAllocated += phase.hoursAllocated || 0;
                 totalLogged += phase.hoursLogged || 0;
                 
-                // Reassign tasks to phases
                 phase.tasks = userTasks.filter(t => t.phaseId === phase.id);
                 phase.taskHoursTotal = phase.tasks.reduce((sum, t) => sum + (t.effort || 0), 0);
                 
-                if (!phaseBreakdown[phase.phase]) {
-                    phaseBreakdown[phase.phase] = 0;
-                }
+                if (!phaseBreakdown[phase.phase]) phaseBreakdown[phase.phase] = 0;
                 phaseBreakdown[phase.phase] += phase.hoursLogged || 0;
             });
             
@@ -547,10 +361,7 @@
         }
 
         function getPhaseClass(phase) {
-            const map = {
-                'SD': 'phase-sd', 'DD': 'phase-dd', 'CD': 'phase-cd',
-                'Client Intake': 'phase-intake', 'Permitting': 'phase-permitting', 'Complete': 'phase-complete'
-            };
+            const map = { 'SD': 'phase-sd', 'DD': 'phase-dd', 'CD': 'phase-cd', 'Client Intake': 'phase-intake', 'Permitting': 'phase-permitting', 'Complete': 'phase-complete' };
             return map[phase] || 'phase-default';
         }
 
@@ -578,7 +389,6 @@
         function renderDashboard() {
             const data = filteredData;
             
-            // Check if there's any data for this user
             if (filterUser && data.phases.length === 0 && data.tasks.length === 0) {
                 document.getElementById('app').innerHTML = `
                     <div class="header">
@@ -598,11 +408,9 @@
             
             const completionPct = data.totalAllocated > 0 ? Math.round((data.totalLogged / data.totalAllocated) * 100) : 0;
             
-            // Find unassigned tasks (tasks owned by user but not linked to their phases)
             const userPhaseIds = data.phases.map(p => p.id);
             const unassignedTasks = data.tasks.filter(t => !t.phaseId || !userPhaseIds.includes(t.phaseId));
             
-            // Build phase cards with tasks
             let phasesHTML = '';
             data.phases.forEach(phase => {
                 const pct = phase.percentage || 0;
@@ -668,7 +476,6 @@
                 `;
             });
             
-            // Unassigned tasks section
             let unassignedHTML = '';
             if (unassignedTasks.length > 0) {
                 let unassignedTasksHTML = '';
@@ -779,19 +586,14 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'bottom', labels: { color: '#888', padding: 20 } }
-                        }
+                        plugins: { legend: { position: 'bottom', labels: { color: '#888', padding: 20 } } }
                     }
                 });
             }
 
             const phaseCtx = document.getElementById('phaseChart');
             if (phaseCtx && Object.keys(data.phaseBreakdown).length > 0) {
-                const colors = {
-                    'SD': '#64B5F6', 'DD': '#FFAB91', 'CD': '#81C784',
-                    'Client Intake': '#CE93D8', 'Permitting': '#FFB74D', 'Complete': '#81C784'
-                };
+                const colors = { 'SD': '#64B5F6', 'DD': '#FFAB91', 'CD': '#81C784', 'Client Intake': '#CE93D8', 'Permitting': '#FFB74D', 'Complete': '#81C784' };
                 const labels = Object.keys(data.phaseBreakdown);
                 const values = Object.values(data.phaseBreakdown);
                 
