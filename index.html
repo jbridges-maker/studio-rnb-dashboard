@@ -342,125 +342,37 @@
     </div>
 
     <script>
-        // ========== CONFIGURATION ==========
-        // Your Notion API credentials
-        const CONFIG = {
-            NOTION_API_KEY: 'ntn_Y14918344435K19ZnZU4IQRP057ZhCVYbVl6gDWtpZNeMl',
-            TIME_LOG_DB: '2f6058eb964b80ab8dcae1cb2293af95',
-            // Multiple CORS proxies as fallbacks
-            CORS_PROXIES: [
-                'https://corsproxy.io/?',
-                'https://api.allorigins.win/raw?url=',
-                'https://cors-anywhere.herokuapp.com/'
-            ]
-        };
+        // YOUR CLOUDFLARE WORKER API
+        const API_URL = 'https://studio-rnb-api.jbridges-c38.workers.dev';
 
         // State
         let dashboardData = null;
         let hoursChart = null;
         let phaseChart = null;
 
-        // Try fetching with multiple CORS proxies
-        async function fetchWithProxy(url, options) {
-            for (const proxy of CONFIG.CORS_PROXIES) {
-                try {
-                    const proxyUrl = proxy + encodeURIComponent(url);
-                    const response = await fetch(proxyUrl, options);
-                    if (response.ok) {
-                        return response;
-                    }
-                } catch (e) {
-                    console.log(`Proxy ${proxy} failed, trying next...`);
-                }
-            }
-            throw new Error('All proxies failed');
-        }
-
-        // Fetch data from Notion API
+        // Fetch data from Cloudflare Worker
         async function fetchData() {
             const app = document.getElementById('app');
             
             try {
-                const url = `https://api.notion.com/v1/databases/${CONFIG.TIME_LOG_DB}/query`;
+                const response = await fetch(API_URL);
                 
-                const response = await fetch('https://corsproxy.io/?' + encodeURIComponent(url), {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${CONFIG.NOTION_API_KEY}`,
-                        'Notion-Version': '2022-06-28',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ page_size: 100 })
-                });
-
                 if (!response.ok) {
                     throw new Error(`API Error: ${response.status}`);
                 }
 
-                const data = await response.json();
-                dashboardData = processNotionData(data.results);
+                dashboardData = await response.json();
+                
+                if (dashboardData.error) {
+                    throw new Error(dashboardData.error);
+                }
+                
                 renderDashboard();
                 
             } catch (error) {
                 console.error('Error:', error);
                 renderError(error.message);
             }
-        }
-
-        // Process Notion API response
-        function processNotionData(results) {
-            const data = {
-                phases: [],
-                totalAllocated: 0,
-                totalLogged: 0,
-                totalRemaining: 0,
-                projectCount: 0,
-                phaseBreakdown: {}
-            };
-
-            const projectSet = new Set();
-
-            results.forEach(page => {
-                const props = page.properties;
-                
-                const entry = props['Entry']?.title?.[0]?.plain_text || 'Unnamed';
-                const phase = props['Phase']?.select?.name || 'Unknown';
-                const hoursAllocated = props['Hours Allocated']?.number || 0;
-                const hoursLogged = props['Hours Logged']?.rollup?.number || 0;
-                const variance = hoursAllocated - hoursLogged;
-                
-                let displayName = entry;
-                if (props['Client Name']?.rollup?.array?.[0]?.title?.[0]?.plain_text) {
-                    displayName = props['Client Name'].rollup.array[0].title[0].plain_text;
-                }
-
-                const projectId = props['Studio RNB Client Portal']?.relation?.[0]?.id || entry;
-
-                data.phases.push({
-                    id: page.id,
-                    entry: entry,
-                    displayName: displayName,
-                    phase: phase,
-                    hoursAllocated: hoursAllocated,
-                    hoursLogged: hoursLogged,
-                    variance: variance,
-                    percentage: hoursAllocated > 0 ? (hoursLogged / hoursAllocated) * 100 : 0
-                });
-
-                data.totalAllocated += hoursAllocated;
-                data.totalLogged += hoursLogged;
-                projectSet.add(projectId);
-
-                if (!data.phaseBreakdown[phase]) {
-                    data.phaseBreakdown[phase] = 0;
-                }
-                data.phaseBreakdown[phase] += hoursLogged;
-            });
-
-            data.totalRemaining = data.totalAllocated - data.totalLogged;
-            data.projectCount = projectSet.size;
-
-            return data;
         }
 
         // Render error state
@@ -474,10 +386,7 @@
                     <button class="refresh-btn" onclick="fetchData()">🔄 Retry</button>
                 </div>
                 <div class="error-banner">
-                    <strong>Unable to load data:</strong> ${message}<br>
-                    <small style="color: #999; margin-top: 8px; display: block;">
-                        This may be a temporary issue with the proxy service. Click Retry or refresh the page.
-                    </small>
+                    <strong>Unable to load data:</strong> ${message}
                 </div>
             `;
         }
