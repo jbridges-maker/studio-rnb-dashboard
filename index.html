@@ -86,11 +86,6 @@
             background: #444;
         }
         
-        .refresh-btn.loading {
-            opacity: 0.7;
-            pointer-events: none;
-        }
-        
         .loading {
             text-align: center;
             padding: 60px;
@@ -124,12 +119,6 @@
             border-radius: 12px;
             padding: 20px;
             border: 1px solid #333;
-            transition: transform 0.2s, border-color 0.2s;
-        }
-        
-        .card:hover {
-            transform: translateY(-2px);
-            border-color: #444;
         }
         
         .card-label {
@@ -184,64 +173,54 @@
             height: 200px;
         }
         
-        /* Project Progress */
-        .progress-section {
-            background: #252525;
-            border-radius: 12px;
-            padding: 24px;
-            border: 1px solid #333;
+        /* Phase Cards with Tasks */
+        .phases-section {
+            margin-bottom: 32px;
         }
         
-        .progress-section h3 {
-            font-size: 14px;
+        .phases-section h2 {
+            font-size: 16px;
             font-weight: 600;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             color: #fff;
         }
         
-        .progress-header {
-            display: grid;
-            grid-template-columns: 180px 100px 1fr 100px 100px;
-            gap: 16px;
-            padding: 8px 0 12px;
-            border-bottom: 1px solid #444;
-            font-size: 11px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .phase-card {
+            background: #252525;
+            border-radius: 12px;
+            border: 1px solid #333;
+            margin-bottom: 16px;
+            overflow: hidden;
         }
         
-        .project-row {
-            display: grid;
-            grid-template-columns: 180px 100px 1fr 100px 100px;
-            align-items: center;
-            gap: 16px;
-            padding: 14px 0;
+        .phase-header {
+            padding: 20px;
             border-bottom: 1px solid #333;
-            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
         }
         
-        .project-row:hover {
+        .phase-header:hover {
             background: rgba(255,255,255,0.02);
         }
         
-        .project-row:last-child {
-            border-bottom: none;
+        .phase-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
         
-        .project-name {
-            font-size: 14px;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .phase-name {
+            font-size: 16px;
+            font-weight: 600;
         }
         
         .phase-tag {
             font-size: 11px;
-            padding: 4px 8px;
+            padding: 4px 10px;
             border-radius: 4px;
-            text-align: center;
             font-weight: 500;
         }
         
@@ -253,14 +232,40 @@
         .phase-complete { background: #1B5E20; color: #81C784; }
         .phase-default { background: #333; color: #888; }
         
-        .progress-bar-container {
+        .phase-stats {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        
+        .phase-stat {
+            text-align: right;
+        }
+        
+        .phase-stat-label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        .phase-stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #C9A227;
+        }
+        
+        .phase-progress {
+            padding: 0 20px 16px;
+        }
+        
+        .phase-progress-bar {
             background: #333;
             border-radius: 8px;
             height: 8px;
             overflow: hidden;
         }
         
-        .progress-bar {
+        .phase-progress-fill {
             height: 100%;
             border-radius: 8px;
             transition: width 0.5s ease;
@@ -270,28 +275,141 @@
         .progress-yellow { background: linear-gradient(90deg, #FF9800, #FFB74D); }
         .progress-red { background: linear-gradient(90deg, #f44336, #E57373); }
         
-        .hours-text {
+        .phase-progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 11px;
+            color: #666;
+        }
+        
+        /* Tasks List */
+        .tasks-list {
+            padding: 0 20px 20px;
+        }
+        
+        .tasks-header {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .task-row {
+            display: grid;
+            grid-template-columns: 24px 1fr 80px 100px 80px;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #2a2a2a;
             font-size: 13px;
+        }
+        
+        .task-row:last-child {
+            border-bottom: none;
+        }
+        
+        .task-checkbox {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .task-checkbox.done {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+        
+        .task-checkbox.done::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+        }
+        
+        .task-checkbox.in-progress {
+            border-color: #FF9800;
+            background: rgba(255, 152, 0, 0.2);
+        }
+        
+        .task-name {
+            color: #ddd;
+        }
+        
+        .task-name.done {
+            text-decoration: line-through;
+            color: #666;
+        }
+        
+        .task-effort {
             color: #888;
             text-align: right;
         }
         
-        .status-badge {
-            font-size: 11px;
-            padding: 4px 10px;
-            border-radius: 12px;
+        .task-owner {
+            color: #888;
+            font-size: 12px;
+        }
+        
+        .task-status {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 10px;
             text-align: center;
             font-weight: 500;
         }
         
-        .status-on-track { background: rgba(76, 175, 80, 0.2); color: #4CAF50; }
-        .status-warning { background: rgba(255, 152, 0, 0.2); color: #FF9800; }
-        .status-over { background: rgba(244, 67, 54, 0.2); color: #f44336; }
+        .status-done { background: rgba(76, 175, 80, 0.2); color: #4CAF50; }
+        .status-in-progress { background: rgba(255, 152, 0, 0.2); color: #FF9800; }
+        .status-not-started { background: rgba(156, 163, 175, 0.2); color: #9CA3AF; }
+        .status-in-review { background: rgba(139, 92, 246, 0.2); color: #8B5CF6; }
         
-        .no-data {
-            text-align: center;
-            padding: 40px;
+        .no-tasks {
+            color: #555;
+            font-size: 13px;
+            font-style: italic;
+            padding: 10px 0;
+        }
+        
+        .expand-icon {
             color: #666;
+            transition: transform 0.2s;
+        }
+        
+        .phase-card.collapsed .tasks-list {
+            display: none;
+        }
+        
+        .phase-card.collapsed .expand-icon {
+            transform: rotate(-90deg);
+        }
+        
+        /* Unassigned Tasks */
+        .unassigned-section {
+            background: #252525;
+            border-radius: 12px;
+            border: 1px solid #333;
+            padding: 20px;
+            margin-bottom: 32px;
+        }
+        
+        .unassigned-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #888;
+        }
+        
+        .last-updated {
+            font-size: 11px;
+            color: #555;
+            text-align: right;
+            margin-top: 16px;
         }
         
         .error-banner {
@@ -301,14 +419,6 @@
             padding: 16px;
             color: #f44336;
             margin-bottom: 24px;
-            font-size: 14px;
-        }
-        
-        .last-updated {
-            font-size: 11px;
-            color: #555;
-            text-align: right;
-            margin-top: 16px;
         }
         
         /* Responsive */
@@ -319,15 +429,10 @@
             .charts-section {
                 grid-template-columns: 1fr;
             }
-            .progress-header,
-            .project-row {
-                grid-template-columns: 1fr 80px;
-                gap: 8px;
+            .task-row {
+                grid-template-columns: 24px 1fr 60px;
             }
-            .progress-header > *:nth-child(3),
-            .progress-header > *:nth-child(4),
-            .project-row > *:nth-child(3),
-            .project-row > *:nth-child(4) {
+            .task-owner, .task-effort {
                 display: none;
             }
         }
@@ -337,124 +442,168 @@
     <div class="dashboard" id="app">
         <div class="loading">
             <div class="loading-spinner"></div>
-            <p>Loading dashboard data from Notion...</p>
+            <p>Loading dashboard data...</p>
         </div>
     </div>
 
     <script>
-        // YOUR CLOUDFLARE WORKER API
         const API_URL = 'https://studio-rnb-api.jbridges-c38.workers.dev';
 
-        // State
         let dashboardData = null;
         let hoursChart = null;
         let phaseChart = null;
 
-        // Fetch data from Cloudflare Worker
         async function fetchData() {
-            const app = document.getElementById('app');
-            
             try {
                 const response = await fetch(API_URL);
-                
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
                 dashboardData = await response.json();
-                
-                if (dashboardData.error) {
-                    throw new Error(dashboardData.error);
-                }
-                
+                if (dashboardData.error) throw new Error(dashboardData.error);
                 renderDashboard();
-                
             } catch (error) {
-                console.error('Error:', error);
-                renderError(error.message);
+                document.getElementById('app').innerHTML = `
+                    <div class="header">
+                        <div class="header-left"><h1>📊 Studio RNB Dashboard</h1></div>
+                        <button class="refresh-btn" onclick="fetchData()">🔄 Retry</button>
+                    </div>
+                    <div class="error-banner"><strong>Error:</strong> ${error.message}</div>
+                `;
             }
         }
 
-        // Render error state
-        function renderError(message) {
-            const app = document.getElementById('app');
-            app.innerHTML = `
-                <div class="header">
-                    <div class="header-left">
-                        <h1>📊 Studio RNB Dashboard</h1>
-                    </div>
-                    <button class="refresh-btn" onclick="fetchData()">🔄 Retry</button>
-                </div>
-                <div class="error-banner">
-                    <strong>Unable to load data:</strong> ${message}
-                </div>
-            `;
-        }
-
-        // Get status based on percentage
-        function getStatus(percentage) {
-            if (percentage > 100) return { class: 'status-over', text: 'Over Budget', barClass: 'progress-red' };
-            if (percentage > 85) return { class: 'status-warning', text: 'Near Limit', barClass: 'progress-yellow' };
-            return { class: 'status-on-track', text: 'On Track', barClass: 'progress-green' };
-        }
-
-        // Get phase class
         function getPhaseClass(phase) {
             const map = {
-                'SD': 'phase-sd',
-                'DD': 'phase-dd',
-                'CD': 'phase-cd',
-                'Client Intake': 'phase-intake',
-                'Permitting': 'phase-permitting',
-                'Complete': 'phase-complete'
+                'SD': 'phase-sd', 'DD': 'phase-dd', 'CD': 'phase-cd',
+                'Client Intake': 'phase-intake', 'Permitting': 'phase-permitting', 'Complete': 'phase-complete'
             };
             return map[phase] || 'phase-default';
         }
 
-        // Render the dashboard
-        function renderDashboard() {
-            const app = document.getElementById('app');
-            const data = dashboardData;
-            
-            const completionPercent = data.totalAllocated > 0 
-                ? Math.round((data.totalLogged / data.totalAllocated) * 100) 
-                : 0;
+        function getProgressClass(pct) {
+            if (pct > 100) return 'progress-red';
+            if (pct > 85) return 'progress-yellow';
+            return 'progress-green';
+        }
 
-            let projectRowsHTML = '';
+        function getStatusClass(status) {
+            const s = status.toLowerCase();
+            if (s === 'done') return 'status-done';
+            if (s === 'in progress') return 'status-in-progress';
+            if (s === 'in review') return 'status-in-review';
+            return 'status-not-started';
+        }
+
+        function getCheckboxClass(status) {
+            const s = status.toLowerCase();
+            if (s === 'done') return 'done';
+            if (s === 'in progress') return 'in-progress';
+            return '';
+        }
+
+        function renderDashboard() {
+            const data = dashboardData;
+            const completionPct = data.totalAllocated > 0 ? Math.round((data.totalLogged / data.totalAllocated) * 100) : 0;
             
-            if (data.phases.length === 0) {
-                projectRowsHTML = '<div class="no-data">No phase entries found. Add data to your Time Log Test database in Notion.</div>';
-            } else {
-                data.phases.forEach(phase => {
-                    const status = getStatus(phase.percentage);
-                    const phaseClass = getPhaseClass(phase.phase);
-                    const barWidth = Math.min(phase.percentage, 110);
-                    
-                    projectRowsHTML += `
-                        <div class="project-row">
-                            <div class="project-name" title="${phase.entry}">${phase.displayName}</div>
-                            <div class="phase-tag ${phaseClass}">${phase.phase}</div>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar ${status.barClass}" style="width: ${barWidth}%"></div>
+            // Find unassigned tasks
+            const unassignedTasks = data.tasks.filter(t => !t.phaseId);
+            
+            // Build phase cards with tasks
+            let phasesHTML = '';
+            data.phases.forEach(phase => {
+                const pct = phase.percentage;
+                const progressClass = getProgressClass(pct);
+                const phaseClass = getPhaseClass(phase.phase);
+                
+                let tasksHTML = '';
+                if (phase.tasks && phase.tasks.length > 0) {
+                    phase.tasks.forEach(task => {
+                        const statusClass = getStatusClass(task.status);
+                        const checkboxClass = getCheckboxClass(task.status);
+                        const nameClass = task.status.toLowerCase() === 'done' ? 'done' : '';
+                        tasksHTML += `
+                            <div class="task-row">
+                                <div class="task-checkbox ${checkboxClass}"></div>
+                                <div class="task-name ${nameClass}">${task.action}</div>
+                                <div class="task-effort">${task.effort || '-'} hrs</div>
+                                <div class="task-owner">${task.owner}</div>
+                                <div class="task-status ${statusClass}">${task.status}</div>
                             </div>
-                            <div class="hours-text">${phase.hoursLogged} / ${phase.hoursAllocated}</div>
-                            <div class="status-badge ${status.class}">${status.text}</div>
+                        `;
+                    });
+                } else {
+                    tasksHTML = '<div class="no-tasks">No tasks assigned to this phase</div>';
+                }
+                
+                phasesHTML += `
+                    <div class="phase-card">
+                        <div class="phase-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                            <div class="phase-info">
+                                <span class="phase-name">${phase.displayName}</span>
+                                <span class="phase-tag ${phaseClass}">${phase.phase}</span>
+                            </div>
+                            <div class="phase-stats">
+                                <div class="phase-stat">
+                                    <div class="phase-stat-label">Budget</div>
+                                    <div class="phase-stat-value">${phase.hoursAllocated} hrs</div>
+                                </div>
+                                <div class="phase-stat">
+                                    <div class="phase-stat-label">Logged</div>
+                                    <div class="phase-stat-value">${phase.hoursLogged} hrs</div>
+                                </div>
+                                <div class="phase-stat">
+                                    <div class="phase-stat-label">Tasks</div>
+                                    <div class="phase-stat-value">${phase.tasks ? phase.tasks.length : 0}</div>
+                                </div>
+                                <span class="expand-icon">▼</span>
+                            </div>
+                        </div>
+                        <div class="phase-progress">
+                            <div class="phase-progress-bar">
+                                <div class="phase-progress-fill ${progressClass}" style="width: ${Math.min(pct, 100)}%"></div>
+                            </div>
+                            <div class="phase-progress-text">
+                                <span>${phase.taskHoursTotal || 0} hrs assigned to tasks</span>
+                                <span>${Math.round(pct)}% used</span>
+                            </div>
+                        </div>
+                        <div class="tasks-list">
+                            <div class="tasks-header">📋 Tasks (${phase.tasks ? phase.tasks.length : 0})</div>
+                            ${tasksHTML}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Unassigned tasks section
+            let unassignedHTML = '';
+            if (unassignedTasks.length > 0) {
+                let unassignedTasksHTML = '';
+                unassignedTasks.forEach(task => {
+                    const statusClass = getStatusClass(task.status);
+                    const checkboxClass = getCheckboxClass(task.status);
+                    unassignedTasksHTML += `
+                        <div class="task-row">
+                            <div class="task-checkbox ${checkboxClass}"></div>
+                            <div class="task-name">${task.action}</div>
+                            <div class="task-effort">${task.effort || '-'} hrs</div>
+                            <div class="task-owner">${task.owner}</div>
+                            <div class="task-status ${statusClass}">${task.status}</div>
                         </div>
                     `;
                 });
+                unassignedHTML = `
+                    <div class="unassigned-section">
+                        <h3>⚠️ Unassigned Tasks (${unassignedTasks.length})</h3>
+                        ${unassignedTasksHTML}
+                    </div>
+                `;
             }
 
-            const remainingClass = data.totalRemaining < 0 ? 'negative' : '';
-            const remainingLabel = data.totalRemaining >= 0 ? 'Available' : 'Over budget';
-
-            app.innerHTML = `
+            document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="header-left">
                         <h1>📊 Studio RNB Dashboard</h1>
-                        <div class="live-badge">
-                            <span class="live-dot"></span>
-                            Live
-                        </div>
+                        <div class="live-badge"><span class="live-dot"></span> Live</div>
                     </div>
                     <button class="refresh-btn" onclick="refreshData(this)">🔄 Refresh</button>
                 </div>
@@ -468,45 +617,36 @@
                     <div class="card">
                         <div class="card-label">Hours Logged</div>
                         <div class="card-value logged">${data.totalLogged}</div>
-                        <div class="card-subtitle">${completionPercent}% used</div>
+                        <div class="card-subtitle">${completionPct}% used</div>
                     </div>
                     <div class="card">
                         <div class="card-label">Hours Remaining</div>
-                        <div class="card-value remaining ${remainingClass}">${Math.abs(data.totalRemaining)}</div>
-                        <div class="card-subtitle">${remainingLabel}</div>
+                        <div class="card-value remaining ${data.totalRemaining < 0 ? 'negative' : ''}">${Math.abs(data.totalRemaining)}</div>
+                        <div class="card-subtitle">${data.totalRemaining >= 0 ? 'Available' : 'Over budget'}</div>
                     </div>
                     <div class="card">
-                        <div class="card-label">Active Phases</div>
-                        <div class="card-value projects">${data.phases.length}</div>
-                        <div class="card-subtitle">${data.projectCount} project${data.projectCount !== 1 ? 's' : ''}</div>
+                        <div class="card-label">Total Tasks</div>
+                        <div class="card-value projects">${data.tasks.length}</div>
+                        <div class="card-subtitle">${data.phases.length} phases</div>
                     </div>
                 </div>
                 
                 <div class="charts-section">
                     <div class="chart-card">
                         <h3>Hours Breakdown</h3>
-                        <div class="chart-container">
-                            <canvas id="hoursChart"></canvas>
-                        </div>
+                        <div class="chart-container"><canvas id="hoursChart"></canvas></div>
                     </div>
                     <div class="chart-card">
                         <h3>Hours by Phase</h3>
-                        <div class="chart-container">
-                            <canvas id="phaseChart"></canvas>
-                        </div>
+                        <div class="chart-container"><canvas id="phaseChart"></canvas></div>
                     </div>
                 </div>
                 
-                <div class="progress-section">
-                    <h3>Project Progress</h3>
-                    <div class="progress-header">
-                        <div>Project</div>
-                        <div>Phase</div>
-                        <div>Progress</div>
-                        <div style="text-align: right">Hours</div>
-                        <div style="text-align: center">Status</div>
-                    </div>
-                    ${projectRowsHTML}
+                ${unassignedHTML}
+                
+                <div class="phases-section">
+                    <h2>📁 Phases & Tasks</h2>
+                    ${phasesHTML}
                 </div>
                 
                 <div class="last-updated">Last updated: ${new Date().toLocaleString()}</div>
@@ -515,23 +655,17 @@
             initCharts();
         }
 
-        // Refresh with loading state
         async function refreshData(btn) {
-            btn.classList.add('loading');
             btn.innerHTML = '⏳ Loading...';
             await fetchData();
-            btn.classList.remove('loading');
             btn.innerHTML = '🔄 Refresh';
         }
 
-        // Initialize charts
         function initCharts() {
             const data = dashboardData;
-            
             if (hoursChart) hoursChart.destroy();
             if (phaseChart) phaseChart.destroy();
 
-            // Hours Donut
             const hoursCtx = document.getElementById('hoursChart');
             if (hoursCtx) {
                 hoursChart = new Chart(hoursCtx.getContext('2d'), {
@@ -549,31 +683,26 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: { color: '#888', padding: 20, font: { size: 12 } }
-                            }
+                            legend: { position: 'bottom', labels: { color: '#888', padding: 20 } }
                         }
                     }
                 });
             }
 
-            // Phase Bar
             const phaseCtx = document.getElementById('phaseChart');
             if (phaseCtx && Object.keys(data.phaseBreakdown).length > 0) {
-                const phaseColors = {
+                const colors = {
                     'SD': '#64B5F6', 'DD': '#FFAB91', 'CD': '#81C784',
                     'Client Intake': '#CE93D8', 'Permitting': '#FFB74D', 'Complete': '#81C784'
                 };
                 const labels = Object.keys(data.phaseBreakdown);
                 const values = Object.values(data.phaseBreakdown);
-                const colors = labels.map(l => phaseColors[l] || '#888');
-
+                
                 phaseChart = new Chart(phaseCtx.getContext('2d'), {
                     type: 'bar',
                     data: {
                         labels: labels,
-                        datasets: [{ label: 'Hours', data: values, backgroundColor: colors, borderRadius: 6 }]
+                        datasets: [{ data: values, backgroundColor: labels.map(l => colors[l] || '#888'), borderRadius: 6 }]
                     },
                     options: {
                         responsive: true,
@@ -588,7 +717,6 @@
             }
         }
 
-        // Start
         document.addEventListener('DOMContentLoaded', fetchData);
     </script>
 </body>
