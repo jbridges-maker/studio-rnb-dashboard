@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio RNB - Time Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #191919;
+            color: #ffffff;
+            padding: 24px;
+            min-height: 100vh;
+        }
+        
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #C9A227;
+        }
+        
+        .live-badge {
+            font-size: 11px;
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            padding: 4px 10px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .refresh-btn {
+            background: #333;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            background: #444;
+        }
+        
+        .refresh-btn.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #888;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #333;
+            border-top-color: #C9A227;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        
+        .card {
+            background: #252525;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #333;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: #444;
+        }
+        
+        .card-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .card-value {
+            font-size: 36px;
+            font-weight: 700;
+        }
+        
+        .card-value.allocated { color: #C9A227; }
+        .card-value.logged { color: #4CAF50; }
+        .card-value.remaining { color: #64B5F6; }
+        .card-value.remaining.negative { color: #f44336; }
+        .card-value.projects { color: #CE93D8; }
+        
+        .card-subtitle {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .chart-card {
+            background: #252525;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #333;
+        }
+        
+        .chart-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 200px;
+        }
+        
+        /* Project Progress */
+        .progress-section {
+            background: #252525;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #333;
+        }
+        
+        .progress-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        
+        .progress-header {
+            display: grid;
+            grid-template-columns: 180px 100px 1fr 100px 100px;
+            gap: 16px;
+            padding: 8px 0 12px;
+            border-bottom: 1px solid #444;
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .project-row {
+            display: grid;
+            grid-template-columns: 180px 100px 1fr 100px 100px;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 0;
+            border-bottom: 1px solid #333;
+            transition: background 0.2s;
+        }
+        
+        .project-row:hover {
+            background: rgba(255,255,255,0.02);
+        }
+        
+        .project-row:last-child {
+            border-bottom: none;
+        }
+        
+        .project-name {
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .phase-tag {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .phase-sd { background: #1E3A5F; color: #64B5F6; }
+        .phase-dd { background: #3E2723; color: #FFAB91; }
+        .phase-cd { background: #1B5E20; color: #81C784; }
+        .phase-intake { background: #4A148C; color: #CE93D8; }
+        .phase-permitting { background: #E65100; color: #FFB74D; }
+        .phase-complete { background: #1B5E20; color: #81C784; }
+        .phase-default { background: #333; color: #888; }
+        
+        .progress-bar-container {
+            background: #333;
+            border-radius: 8px;
+            height: 8px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-green { background: linear-gradient(90deg, #4CAF50, #81C784); }
+        .progress-yellow { background: linear-gradient(90deg, #FF9800, #FFB74D); }
+        .progress-red { background: linear-gradient(90deg, #f44336, #E57373); }
+        
+        .hours-text {
+            font-size: 13px;
+            color: #888;
+            text-align: right;
+        }
+        
+        .status-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .status-on-track { background: rgba(76, 175, 80, 0.2); color: #4CAF50; }
+        .status-warning { background: rgba(255, 152, 0, 0.2); color: #FF9800; }
+        .status-over { background: rgba(244, 67, 54, 0.2); color: #f44336; }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error-banner {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            color: #f44336;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+        
+        .last-updated {
+            font-size: 11px;
+            color: #555;
+            text-align: right;
+            margin-top: 16px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 900px) {
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            .progress-header,
+            .project-row {
+                grid-template-columns: 1fr 80px;
+                gap: 8px;
+            }
+            .progress-header > *:nth-child(3),
+            .progress-header > *:nth-child(4),
+            .project-row > *:nth-child(3),
+            .project-row > *:nth-child(4) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard" id="app">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading dashboard data from Notion...</p>
+        </div>
+    </div>
+
+    <script>
+        // ========== CONFIGURATION ==========
+        // Your Notion API credentials
+        const CONFIG = {
+            NOTION_API_KEY: 'ntn_Y14918344435K19ZnZU4IQRP057ZhCVYbVl6gDWtpZNeMl',
+            TIME_LOG_DB: '2f6058eb964b80ab8dcae1cb2293af95',
+            // Multiple CORS proxies as fallbacks
+            CORS_PROXIES: [
+                'https://corsproxy.io/?',
+                'https://api.allorigins.win/raw?url=',
+                'https://cors-anywhere.herokuapp.com/'
+            ]
+        };
+
+        // State
+        let dashboardData = null;
+        let hoursChart = null;
+        let phaseChart = null;
+
+        // Try fetching with multiple CORS proxies
+        async function fetchWithProxy(url, options) {
+            for (const proxy of CONFIG.CORS_PROXIES) {
+                try {
+                    const proxyUrl = proxy + encodeURIComponent(url);
+                    const response = await fetch(proxyUrl, options);
+                    if (response.ok) {
+                        return response;
+                    }
+                } catch (e) {
+                    console.log(`Proxy ${proxy} failed, trying next...`);
+                }
+            }
+            throw new Error('All proxies failed');
+        }
+
+        // Fetch data from Notion API
+        async function fetchData() {
+            const app = document.getElementById('app');
+            
+            try {
+                const url = `https://api.notion.com/v1/databases/${CONFIG.TIME_LOG_DB}/query`;
+                
+                const response = await fetch('https://corsproxy.io/?' + encodeURIComponent(url), {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${CONFIG.NOTION_API_KEY}`,
+                        'Notion-Version': '2022-06-28',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ page_size: 100 })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                dashboardData = processNotionData(data.results);
+                renderDashboard();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                renderError(error.message);
+            }
+        }
+
+        // Process Notion API response
+        function processNotionData(results) {
+            const data = {
+                phases: [],
+                totalAllocated: 0,
+                totalLogged: 0,
+                totalRemaining: 0,
+                projectCount: 0,
+                phaseBreakdown: {}
+            };
+
+            const projectSet = new Set();
+
+            results.forEach(page => {
+                const props = page.properties;
+                
+                const entry = props['Entry']?.title?.[0]?.plain_text || 'Unnamed';
+                const phase = props['Phase']?.select?.name || 'Unknown';
+                const hoursAllocated = props['Hours Allocated']?.number || 0;
+                const hoursLogged = props['Hours Logged']?.rollup?.number || 0;
+                const variance = hoursAllocated - hoursLogged;
+                
+                let displayName = entry;
+                if (props['Client Name']?.rollup?.array?.[0]?.title?.[0]?.plain_text) {
+                    displayName = props['Client Name'].rollup.array[0].title[0].plain_text;
+                }
+
+                const projectId = props['Studio RNB Client Portal']?.relation?.[0]?.id || entry;
+
+                data.phases.push({
+                    id: page.id,
+                    entry: entry,
+                    displayName: displayName,
+                    phase: phase,
+                    hoursAllocated: hoursAllocated,
+                    hoursLogged: hoursLogged,
+                    variance: variance,
+                    percentage: hoursAllocated > 0 ? (hoursLogged / hoursAllocated) * 100 : 0
+                });
+
+                data.totalAllocated += hoursAllocated;
+                data.totalLogged += hoursLogged;
+                projectSet.add(projectId);
+
+                if (!data.phaseBreakdown[phase]) {
+                    data.phaseBreakdown[phase] = 0;
+                }
+                data.phaseBreakdown[phase] += hoursLogged;
+            });
+
+            data.totalRemaining = data.totalAllocated - data.totalLogged;
+            data.projectCount = projectSet.size;
+
+            return data;
+        }
+
+        // Render error state
+        function renderError(message) {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class="header">
+                    <div class="header-left">
+                        <h1>📊 Studio RNB Dashboard</h1>
+                    </div>
+                    <button class="refresh-btn" onclick="fetchData()">🔄 Retry</button>
+                </div>
+                <div class="error-banner">
+                    <strong>Unable to load data:</strong> ${message}<br>
+                    <small style="color: #999; margin-top: 8px; display: block;">
+                        This may be a temporary issue with the proxy service. Click Retry or refresh the page.
+                    </small>
+                </div>
+            `;
+        }
+
+        // Get status based on percentage
+        function getStatus(percentage) {
+            if (percentage > 100) return { class: 'status-over', text: 'Over Budget', barClass: 'progress-red' };
+            if (percentage > 85) return { class: 'status-warning', text: 'Near Limit', barClass: 'progress-yellow' };
+            return { class: 'status-on-track', text: 'On Track', barClass: 'progress-green' };
+        }
+
+        // Get phase class
+        function getPhaseClass(phase) {
+            const map = {
+                'SD': 'phase-sd',
+                'DD': 'phase-dd',
+                'CD': 'phase-cd',
+                'Client Intake': 'phase-intake',
+                'Permitting': 'phase-permitting',
+                'Complete': 'phase-complete'
+            };
+            return map[phase] || 'phase-default';
+        }
+
+        // Render the dashboard
+        function renderDashboard() {
+            const app = document.getElementById('app');
+            const data = dashboardData;
+            
+            const completionPercent = data.totalAllocated > 0 
+                ? Math.round((data.totalLogged / data.totalAllocated) * 100) 
+                : 0;
+
+            let projectRowsHTML = '';
+            
+            if (data.phases.length === 0) {
+                projectRowsHTML = '<div class="no-data">No phase entries found. Add data to your Time Log Test database in Notion.</div>';
+            } else {
+                data.phases.forEach(phase => {
+                    const status = getStatus(phase.percentage);
+                    const phaseClass = getPhaseClass(phase.phase);
+                    const barWidth = Math.min(phase.percentage, 110);
+                    
+                    projectRowsHTML += `
+                        <div class="project-row">
+                            <div class="project-name" title="${phase.entry}">${phase.displayName}</div>
+                            <div class="phase-tag ${phaseClass}">${phase.phase}</div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar ${status.barClass}" style="width: ${barWidth}%"></div>
+                            </div>
+                            <div class="hours-text">${phase.hoursLogged} / ${phase.hoursAllocated}</div>
+                            <div class="status-badge ${status.class}">${status.text}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            const remainingClass = data.totalRemaining < 0 ? 'negative' : '';
+            const remainingLabel = data.totalRemaining >= 0 ? 'Available' : 'Over budget';
+
+            app.innerHTML = `
+                <div class="header">
+                    <div class="header-left">
+                        <h1>📊 Studio RNB Dashboard</h1>
+                        <div class="live-badge">
+                            <span class="live-dot"></span>
+                            Live
+                        </div>
+                    </div>
+                    <button class="refresh-btn" onclick="refreshData(this)">🔄 Refresh</button>
+                </div>
+                
+                <div class="summary-cards">
+                    <div class="card">
+                        <div class="card-label">Hours Allocated</div>
+                        <div class="card-value allocated">${data.totalAllocated}</div>
+                        <div class="card-subtitle">Total budget</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Hours Logged</div>
+                        <div class="card-value logged">${data.totalLogged}</div>
+                        <div class="card-subtitle">${completionPercent}% used</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Hours Remaining</div>
+                        <div class="card-value remaining ${remainingClass}">${Math.abs(data.totalRemaining)}</div>
+                        <div class="card-subtitle">${remainingLabel}</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Active Phases</div>
+                        <div class="card-value projects">${data.phases.length}</div>
+                        <div class="card-subtitle">${data.projectCount} project${data.projectCount !== 1 ? 's' : ''}</div>
+                    </div>
+                </div>
+                
+                <div class="charts-section">
+                    <div class="chart-card">
+                        <h3>Hours Breakdown</h3>
+                        <div class="chart-container">
+                            <canvas id="hoursChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Hours by Phase</h3>
+                        <div class="chart-container">
+                            <canvas id="phaseChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="progress-section">
+                    <h3>Project Progress</h3>
+                    <div class="progress-header">
+                        <div>Project</div>
+                        <div>Phase</div>
+                        <div>Progress</div>
+                        <div style="text-align: right">Hours</div>
+                        <div style="text-align: center">Status</div>
+                    </div>
+                    ${projectRowsHTML}
+                </div>
+                
+                <div class="last-updated">Last updated: ${new Date().toLocaleString()}</div>
+            `;
+
+            initCharts();
+        }
+
+        // Refresh with loading state
+        async function refreshData(btn) {
+            btn.classList.add('loading');
+            btn.innerHTML = '⏳ Loading...';
+            await fetchData();
+            btn.classList.remove('loading');
+            btn.innerHTML = '🔄 Refresh';
+        }
+
+        // Initialize charts
+        function initCharts() {
+            const data = dashboardData;
+            
+            if (hoursChart) hoursChart.destroy();
+            if (phaseChart) phaseChart.destroy();
+
+            // Hours Donut
+            const hoursCtx = document.getElementById('hoursChart');
+            if (hoursCtx) {
+                hoursChart = new Chart(hoursCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Logged', 'Remaining'],
+                        datasets: [{
+                            data: [data.totalLogged, Math.max(data.totalRemaining, 0)],
+                            backgroundColor: ['#4CAF50', '#333'],
+                            borderWidth: 0,
+                            cutout: '70%'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#888', padding: 20, font: { size: 12 } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Phase Bar
+            const phaseCtx = document.getElementById('phaseChart');
+            if (phaseCtx && Object.keys(data.phaseBreakdown).length > 0) {
+                const phaseColors = {
+                    'SD': '#64B5F6', 'DD': '#FFAB91', 'CD': '#81C784',
+                    'Client Intake': '#CE93D8', 'Permitting': '#FFB74D', 'Complete': '#81C784'
+                };
+                const labels = Object.keys(data.phaseBreakdown);
+                const values = Object.values(data.phaseBreakdown);
+                const colors = labels.map(l => phaseColors[l] || '#888');
+
+                phaseChart = new Chart(phaseCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{ label: 'Hours', data: values, backgroundColor: colors, borderRadius: 6 }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#888' } },
+                            x: { grid: { display: false }, ticks: { color: '#888' } }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+        }
+
+        // Start
+        document.addEventListener('DOMContentLoaded', fetchData);
+    </script>
+</body>
+</html>
