@@ -566,15 +566,52 @@
         }
 
         function exportToPDF() {
+            // Check if html2pdf is loaded
+            if (typeof html2pdf === 'undefined') {
+                alert('PDF export is loading... Please try again in a moment.');
+                // Try to load the library dynamically
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                document.head.appendChild(script);
+                return;
+            }
+            
             const element = document.getElementById('app');
+            const btn = document.querySelector('.btn-primary');
+            
+            // Show loading state
+            if (btn) {
+                btn.innerHTML = '⏳ Generating...';
+                btn.disabled = true;
+            }
+            
             const opt = {
-                margin: 10,
-                filename: 'studio-rnb-dashboard.pdf',
+                margin: [10, 10, 10, 10],
+                filename: 'studio-rnb-dashboard-' + new Date().toISOString().split('T')[0] + '.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, backgroundColor: '#191919' },
+                html2canvas: { 
+                    scale: 2, 
+                    backgroundColor: '#191919',
+                    useCORS: true,
+                    logging: false
+                },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
             };
-            html2pdf().set(opt).from(element).save();
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Reset button
+                if (btn) {
+                    btn.innerHTML = '📄 Export PDF';
+                    btn.disabled = false;
+                }
+            }).catch((err) => {
+                console.error('PDF export error:', err);
+                alert('PDF export failed. Try using Print (Ctrl+P) and select "Save as PDF" instead.');
+                if (btn) {
+                    btn.innerHTML = '📄 Export PDF';
+                    btn.disabled = false;
+                }
+            });
         }
 
         function renderDashboard() {
