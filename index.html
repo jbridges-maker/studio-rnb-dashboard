@@ -17,6 +17,164 @@
             min-height: 100vh;
         }
         
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal {
+            background: #252525;
+            border-radius: 16px;
+            border: 1px solid #333;
+            padding: 24px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #C9A227;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        
+        .modal-close:hover {
+            color: #fff;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            background: #191919;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #C9A227;
+        }
+        
+        .form-select {
+            cursor: pointer;
+        }
+        
+        .form-select option {
+            background: #191919;
+            color: #fff;
+        }
+        
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .form-submit {
+            width: 100%;
+            padding: 14px;
+            background: #C9A227;
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s;
+        }
+        
+        .form-submit:hover {
+            background: #b8922a;
+        }
+        
+        .form-submit:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .form-success {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            color: #4CAF50;
+            text-align: center;
+            margin-top: 12px;
+            display: none;
+        }
+        
+        .form-error {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            color: #f44336;
+            text-align: center;
+            margin-top: 12px;
+            display: none;
+        }
+        
+        .btn-log-hours {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+        
+        .btn-log-hours:hover {
+            background: #43a047;
+        }
+        
         .dashboard { max-width: 1400px; margin: 0 auto; }
         
         .header {
@@ -883,6 +1041,7 @@
                         ${badges}
                     </div>
                     <div class="header-actions">
+                        <button class="btn btn-log-hours" onclick="openLogHoursModal()">⏱️ Log Hours</button>
                         <button class="btn" onclick="refreshData(this)">🔄 Refresh</button>
                         <button class="btn btn-primary" onclick="exportToPDF()">📄 Export PDF</button>
                     </div>
@@ -1053,6 +1212,152 @@
         }
 
         document.addEventListener('DOMContentLoaded', fetchData);
+    </script>
+    
+    <!-- Log Hours Modal -->
+    <div class="modal-overlay" id="logHoursModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">⏱️ Log Hours</h2>
+                <button class="modal-close" onclick="closeLogHoursModal()">&times;</button>
+            </div>
+            <form id="logHoursForm" onsubmit="submitLogHours(event)">
+                <div class="form-group">
+                    <label class="form-label">Select Phase *</label>
+                    <select class="form-select" id="phaseSelect" required>
+                        <option value="">-- Select a phase --</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Hours *</label>
+                        <input type="number" class="form-input" id="hoursInput" step="0.25" min="0.25" max="24" required placeholder="e.g. 4.5">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Week Ending *</label>
+                        <input type="date" class="form-input" id="weekEndingInput" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes (optional)</label>
+                    <textarea class="form-textarea" id="notesInput" placeholder="What did you work on?"></textarea>
+                </div>
+                <button type="submit" class="form-submit" id="submitBtn">Submit Hours</button>
+                <div class="form-success" id="formSuccess">✅ Hours logged successfully! Dashboard will refresh.</div>
+                <div class="form-error" id="formError">❌ Error logging hours. Please try again.</div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Log Hours Modal Functions
+        function openLogHoursModal() {
+            const modal = document.getElementById('logHoursModal');
+            const phaseSelect = document.getElementById('phaseSelect');
+            const weekEndingInput = document.getElementById('weekEndingInput');
+            
+            // Populate phases dropdown
+            phaseSelect.innerHTML = '<option value="">-- Select a phase --</option>';
+            
+            if (filteredData && filteredData.phases) {
+                filteredData.phases.forEach(phase => {
+                    const option = document.createElement('option');
+                    option.value = phase.id;
+                    option.textContent = `${phase.entry} (${phase.hoursLogged}/${phase.hoursAllocated} hrs)`;
+                    phaseSelect.appendChild(option);
+                });
+            }
+            
+            // Set default week ending to next Friday
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const daysUntilFriday = (5 - dayOfWeek + 7) % 7 || 7;
+            const nextFriday = new Date(today);
+            nextFriday.setDate(today.getDate() + daysUntilFriday);
+            weekEndingInput.value = nextFriday.toISOString().split('T')[0];
+            
+            // Reset form
+            document.getElementById('hoursInput').value = '';
+            document.getElementById('notesInput').value = '';
+            document.getElementById('formSuccess').style.display = 'none';
+            document.getElementById('formError').style.display = 'none';
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('submitBtn').textContent = 'Submit Hours';
+            
+            modal.classList.add('active');
+        }
+        
+        function closeLogHoursModal() {
+            document.getElementById('logHoursModal').classList.remove('active');
+        }
+        
+        async function submitLogHours(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const formSuccess = document.getElementById('formSuccess');
+            const formError = document.getElementById('formError');
+            
+            const phaseId = document.getElementById('phaseSelect').value;
+            const hours = parseFloat(document.getElementById('hoursInput').value);
+            const weekEnding = document.getElementById('weekEndingInput').value;
+            const notes = document.getElementById('notesInput').value;
+            
+            // Get phase name for entry title
+            const phase = filteredData.phases.find(p => p.id === phaseId);
+            const entryName = phase ? `${phase.entry} - ${weekEnding}` : `Time Entry - ${weekEnding}`;
+            
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Submitting...';
+            formSuccess.style.display = 'none';
+            formError.style.display = 'none';
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        entry: entryName,
+                        phaseId: phaseId,
+                        hours: hours,
+                        weekEnding: weekEnding,
+                        notes: notes
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    formSuccess.style.display = 'block';
+                    submitBtn.textContent = '✅ Submitted!';
+                    
+                    // Refresh dashboard after 1.5 seconds
+                    setTimeout(() => {
+                        closeLogHoursModal();
+                        fetchData();
+                    }, 1500);
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+                
+            } catch (error) {
+                console.error('Error submitting hours:', error);
+                formError.style.display = 'block';
+                formError.textContent = `❌ Error: ${error.message}`;
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Hours';
+            }
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('logHoursModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeLogHoursModal();
+            }
+        });
     </script>
 </body>
 </html>
