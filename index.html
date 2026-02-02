@@ -717,6 +717,12 @@
         <button class="tab-btn" data-tab="assessments" onclick="switchTab('assessments')" id="tabBtnAssessments" style="display:none">📋 Assessments</button>
         <button class="tab-btn" data-tab="approvals" onclick="switchTab('approvals')" id="tabBtnApprovals" style="display:none">✅ Approvals <span class="tab-badge" id="approvalsBadge" style="display:none">0</span></button>
         <button class="tab-btn" data-tab="kickoff" onclick="switchTab('kickoff')" id="tabBtnKickoff" style="display:none">🚀 Kickoff <span class="tab-badge" id="kickoffBadge" style="display:none">0</span></button>
+        <button class="tab-btn" data-tab="projects" onclick="switchTab('projects')" id="tabBtnProjects" style="display:none">📂 Projects</button>
+        <button class="tab-btn" data-tab="handoffs" onclick="switchTab('handoffs')" id="tabBtnHandoffs" style="display:none">📋 Handoffs <span class="tab-badge" id="handoffsBadge" style="display:none">0</span></button>
+        <button class="tab-btn" data-tab="pmreports" onclick="switchTab('pmreports')" id="tabBtnPMReports" style="display:none">📊 PM Reports</button>
+        <button class="tab-btn" data-tab="clients" onclick="switchTab('clients')" id="tabBtnClients" style="display:none">👥 Clients</button>
+        <button class="tab-btn" data-tab="coordination" onclick="switchTab('coordination')" id="tabBtnCoordination" style="display:none">🤝 Coordination</button>
+        <button class="tab-btn" data-tab="invoices" onclick="switchTab('invoices')" id="tabBtnInvoices" style="display:none">💰 Invoices</button>
         <!-- User switcher (leadership only) -->
         <div style="margin-left:auto;display:flex;align-items:center;gap:8px;" id="userSwitcher">
             <select class="form-select" id="userSwitcherSelect" onchange="switchUser(this.value)" style="background:#252525;border-color:#444;padding:6px 10px;font-size:12px;border-radius:6px;min-width:160px;display:none;">
@@ -762,6 +768,54 @@
         <div class="loading">
             <div class="loading-spinner"></div>
             <p>Loading kickoff data...</p>
+        </div>
+    </div>
+
+    <!-- TAB: PROJECTS -->
+    <div class="tab-content" id="tab-projects">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading projects...</p>
+        </div>
+    </div>
+
+    <!-- TAB: HANDOFFS -->
+    <div class="tab-content" id="tab-handoffs">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading handoff reports...</p>
+        </div>
+    </div>
+
+    <!-- TAB: PM REPORTS -->
+    <div class="tab-content" id="tab-pmreports">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading PM reports...</p>
+        </div>
+    </div>
+
+    <!-- TAB: CLIENTS -->
+    <div class="tab-content" id="tab-clients">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading clients...</p>
+        </div>
+    </div>
+
+    <!-- TAB: COORDINATION -->
+    <div class="tab-content" id="tab-coordination">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading coordination data...</p>
+        </div>
+    </div>
+
+    <!-- TAB: INVOICES -->
+    <div class="tab-content" id="tab-invoices">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading invoices...</p>
         </div>
     </div>
 
@@ -1068,15 +1122,22 @@
         let assessmentsData = null;
         let clientsData = null;
         let staffData = null;
+        let handoffsData = null;
+        let pmReportsData = null;
+        let coordinationData = null;
+        let invoicesData = null;
         let currentTab = defaultTab || 'dashboard';
 
         // ==================== ROLE SYSTEM ====================
         const ROLE_CONFIG = {
             // Leadership: sees everything, can approve, can submit assessments
             leadership: {
-                tabs: ['dashboard', 'time', 'assessments', 'approvals', 'kickoff'],
+                tabs: ['dashboard', 'time', 'assessments', 'approvals', 'kickoff', 'projects', 'handoffs', 'pmreports', 'clients', 'coordination', 'invoices'],
                 canApprove: true,
                 canSubmitAssessments: true,
+                canApproveHours: true,
+                canEditClients: true,
+                canManageInvoices: true,
                 seesAllProjects: true,
                 seesTeamWorkload: true,
                 seesBudgetAlerts: true,
@@ -1084,9 +1145,12 @@
             },
             // Client Solutions (Samuel, Johnathon): assessments tab
             clientSolutions: {
-                tabs: ['dashboard', 'time', 'assessments'],
+                tabs: ['dashboard', 'time', 'assessments', 'handoffs'],
                 canApprove: false,
-                canSubmitAssessments: true, // Samuel can submit
+                canSubmitAssessments: true,
+                canApproveHours: false,
+                canEditClients: false,
+                canManageInvoices: false,
                 seesAllProjects: false,
                 seesTeamWorkload: false,
                 seesBudgetAlerts: false,
@@ -1097,26 +1161,35 @@
                 tabs: ['dashboard', 'time', 'assessments'],
                 canApprove: false,
                 canSubmitAssessments: false,
+                canApproveHours: false,
+                canEditClients: false,
+                canManageInvoices: false,
                 seesAllProjects: false,
                 seesTeamWorkload: false,
                 seesBudgetAlerts: false,
                 notifications: []
             },
-            // Senior PM: approvals read-only, kickoff, budget alerts
+            // Senior PM: approvals read-only, kickoff, handoffs, pm reports, projects, budget alerts
             seniorPM: {
-                tabs: ['dashboard', 'time', 'approvals', 'kickoff'],
+                tabs: ['dashboard', 'time', 'approvals', 'kickoff', 'projects', 'handoffs', 'pmreports'],
                 canApprove: false,
                 canSubmitAssessments: false,
+                canApproveHours: false,
+                canEditClients: false,
+                canManageInvoices: false,
                 seesAllProjects: true,
                 seesTeamWorkload: true,
                 seesBudgetAlerts: true,
                 notifications: ['approved_kickoff', 'budget_alerts', 'hour_requests', 'sa_handoff_due', 'pm_handoff_due']
             },
-            // Assistant PM
+            // Assistant PM (Emma): dashboard, time, clients
             assistantPM: {
-                tabs: ['dashboard', 'time'],
+                tabs: ['dashboard', 'time', 'clients'],
                 canApprove: false,
                 canSubmitAssessments: false,
+                canApproveHours: false,
+                canEditClients: true,
+                canManageInvoices: false,
                 seesAllProjects: false,
                 seesTeamWorkload: false,
                 seesBudgetAlerts: false,
@@ -1124,19 +1197,38 @@
             },
             // Senior Architect
             seniorArchitect: {
-                tabs: ['dashboard', 'time', 'kickoff'],
+                tabs: ['dashboard', 'time', 'kickoff', 'handoffs'],
                 canApprove: false,
                 canSubmitAssessments: false,
+                canApproveHours: false,
+                canEditClients: false,
+                canManageInvoices: false,
                 seesAllProjects: false,
                 seesTeamWorkload: false,
                 seesBudgetAlerts: false,
                 notifications: ['assigned_projects', 'kickoff_review', 'sa_handoff_due']
             },
-            // BIM / Coordinator
+            // BIM / Coordinator (Melissa gets coordination too)
             teamMember: {
                 tabs: ['dashboard', 'time'],
                 canApprove: false,
                 canSubmitAssessments: false,
+                canApproveHours: false,
+                canEditClients: false,
+                canManageInvoices: false,
+                seesAllProjects: false,
+                seesTeamWorkload: false,
+                seesBudgetAlerts: false,
+                notifications: ['assigned_tasks']
+            },
+            // Melissa - special: coordination tab
+            coordinator: {
+                tabs: ['dashboard', 'time', 'coordination'],
+                canApprove: false,
+                canSubmitAssessments: false,
+                canApproveHours: false,
+                canEditClients: false,
+                canManageInvoices: false,
                 seesAllProjects: false,
                 seesTeamWorkload: false,
                 seesBudgetAlerts: false,
@@ -1155,7 +1247,7 @@
             'young yoon': 'seniorArchitect',
             'shaguni gupta': 'seniorArchitect',
             'john gil corzo': 'teamMember',
-            'melissa galeano': 'teamMember'
+            'melissa galeano': 'coordinator'
         };
 
         function getUserRole() {
@@ -1173,19 +1265,23 @@
         function setupTabs() {
             const role = getUserRole();
             
-            // Show/hide tabs
-            const assessBtn = document.getElementById('tabBtnAssessments');
-            const approvalBtn = document.getElementById('tabBtnApprovals');
-            const kickoffBtn = document.getElementById('tabBtnKickoff');
-            
-            if (role.tabs.includes('assessments')) assessBtn.style.display = '';
-            else assessBtn.style.display = 'none';
-            
-            if (role.tabs.includes('approvals')) approvalBtn.style.display = '';
-            else approvalBtn.style.display = 'none';
+            // Show/hide tabs based on role
+            const tabMap = {
+                'assessments': 'tabBtnAssessments',
+                'approvals': 'tabBtnApprovals',
+                'kickoff': 'tabBtnKickoff',
+                'projects': 'tabBtnProjects',
+                'handoffs': 'tabBtnHandoffs',
+                'pmreports': 'tabBtnPMReports',
+                'clients': 'tabBtnClients',
+                'coordination': 'tabBtnCoordination',
+                'invoices': 'tabBtnInvoices'
+            };
 
-            if (role.tabs.includes('kickoff')) kickoffBtn.style.display = '';
-            else kickoffBtn.style.display = 'none';
+            Object.entries(tabMap).forEach(([tabName, btnId]) => {
+                const btn = document.getElementById(btnId);
+                if (btn) btn.style.display = role.tabs.includes(tabName) ? '' : 'none';
+            });
 
             // Leadership flag
             const roleName = getUserRoleName();
@@ -1459,6 +1555,12 @@
             if (tabName === 'assessments') loadAssessments();
             if (tabName === 'approvals') loadApprovals();
             if (tabName === 'kickoff') loadKickoff();
+            if (tabName === 'projects') loadProjects();
+            if (tabName === 'handoffs') loadHandoffs();
+            if (tabName === 'pmreports') loadPMReports();
+            if (tabName === 'clients') loadClients();
+            if (tabName === 'coordination') loadCoordination();
+            if (tabName === 'invoices') loadInvoices();
         }
 
         // ==================== MODAL HELPERS ====================
@@ -1726,9 +1828,33 @@
                         <div class="phase-content">
                             <div class="phase-progress-bar"><div class="phase-progress-fill ${progressClass}" style="width:${Math.min(pct,100)}%"></div></div>
                             <div class="phase-progress-text"><span>${pct}% used</span><span>${alloc - logged}h remaining</span></div>
+                            ${pct >= 80 ? `<div style="margin-top:8px;"><button class="btn" style="font-size:11px;padding:6px 12px;background:rgba(201,162,39,0.15);border-color:#C9A227;color:#C9A227;" onclick="event.stopPropagation();openHourRequestModal('${phase.id}', '${phase.entry.replace(/'/g, "\\'")}')">⏰ Request More Hours</button></div>` : ''}
+                            ${phase.approvalStatus === 'Requested' ? `<div style="margin-top:8px;padding:8px;background:rgba(255,152,0,0.1);border-radius:6px;font-size:12px;color:#FF9800;">⏳ Hour request pending: +${phase.hoursRequested}h — ${phase.requestReason || ''}</div>` : ''}
+                            ${phase.approvalStatus === 'Approved' ? `<div style="margin-top:8px;padding:8px;background:rgba(76,175,80,0.1);border-radius:6px;font-size:12px;color:#4CAF50;">✅ Recent hour request approved</div>` : ''}
                         </div>
                     </div>`;
             }).join('') : '<div class="no-data">No phases found</div>';
+
+            // Hour request alerts for leadership
+            let hourRequestAlerts = '';
+            if (role.canApproveHours) {
+                const hourRequests = data.phases.filter(p => p.approvalStatus === 'Requested' && p.hoursRequested > 0);
+                if (hourRequests.length > 0) {
+                    hourRequestAlerts = hourRequests.map(hr => `
+                        <div class="alert-banner" style="background:rgba(201,162,39,0.1);border-color:rgba(201,162,39,0.3);">
+                            <span class="alert-icon">⏰</span>
+                            <div class="alert-content">
+                                <div class="alert-title" style="color:#C9A227;">Hour Request: +${hr.hoursRequested}h</div>
+                                <div class="alert-text">${hr.entry} — ${hr.requestReason || 'No reason given'}</div>
+                            </div>
+                            <div style="display:flex;gap:8px;">
+                                <button class="btn btn-approve" style="font-size:11px;padding:6px 12px;" onclick="handleHourApproval('${hr.id}', 'Approved', ${hr.hoursRequested})">✅ Approve</button>
+                                <button class="btn btn-decline" style="font-size:11px;padding:6px 12px;" onclick="handleHourApproval('${hr.id}', 'Denied', ${hr.hoursRequested})">❌ Deny</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
 
             document.getElementById('tab-dashboard').innerHTML = `
                 <div class="header">
@@ -1739,6 +1865,7 @@
                     </div>
                 </div>
                 ${alertsHTML}
+                ${hourRequestAlerts}
                 <div class="summary-cards">
                     <div class="card"><div class="card-label">Hours Allocated</div><div class="card-value gold">${data.totalAllocated}</div><div class="card-subtitle">Total budget</div></div>
                     <div class="card"><div class="card-label">Hours Logged</div><div class="card-value green">${data.totalLogged}</div><div class="card-subtitle">${completionPct}% used</div></div>
@@ -2884,6 +3011,826 @@
                 alert('PDF export loading... please try again.');
                 document.body.removeChild(tempDiv);
             }
+        }
+
+        // ==================== HOUR REQUEST (on Dashboard) ====================
+        function openHourRequestModal(phaseId, phaseEntry) {
+            const html = `<div class="modal-overlay active" id="hourRequestModal" onclick="if(event.target===this)this.remove()">
+                <div class="modal">
+                    <div class="modal-header">
+                        <h2 class="modal-title">⏰ Request Additional Hours</h2>
+                        <button class="modal-close" onclick="document.getElementById('hourRequestModal').remove()">&times;</button>
+                    </div>
+                    <div style="background:#191919;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#888;">
+                        Phase: <strong style="color:#C9A227;">${phaseEntry}</strong>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hours Requested *</label>
+                        <input type="number" class="form-input" id="hrReqHours" step="0.5" min="0.5" required placeholder="e.g. 10">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Reason *</label>
+                        <textarea class="form-textarea" id="hrReqReason" required placeholder="Why do you need additional hours?"></textarea>
+                    </div>
+                    <button class="form-submit" id="hrReqSubmitBtn" onclick="submitHourRequest('${phaseId}')">Submit Request</button>
+                    <div class="form-success" id="hrReqSuccess">✅ Request submitted! Leadership has been notified.</div>
+                    <div class="form-error" id="hrReqError">❌ Error submitting request.</div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        async function submitHourRequest(phaseId) {
+            const hours = document.getElementById('hrReqHours').value;
+            const reason = document.getElementById('hrReqReason').value;
+            if (!hours || !reason) { alert('Please fill in all fields.'); return; }
+
+            const btn = document.getElementById('hrReqSubmitBtn');
+            btn.disabled = true; btn.textContent = '⏳ Submitting...';
+
+            try {
+                const response = await fetch(`${API_URL}/phases/${phaseId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        hoursRequested: Number(hours),
+                        requestReason: reason,
+                        approvalStatus: 'Requested',
+                        requestedBy: filterUser || 'Team Member'
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('hrReqSuccess').style.display = 'block';
+                    btn.textContent = '✅ Submitted!';
+                    setTimeout(() => { document.getElementById('hourRequestModal')?.remove(); dashboardData = null; loadDashboard(); }, 1500);
+                } else throw new Error('Failed');
+            } catch (e) {
+                document.getElementById('hrReqError').style.display = 'block';
+                btn.disabled = false; btn.textContent = 'Submit Request';
+            }
+        }
+
+        async function handleHourApproval(phaseId, action, hoursRequested) {
+            let notes = '';
+            if (action === 'Denied') {
+                notes = prompt('Reason for denying (optional):') || '';
+            } else {
+                if (!confirm(`Approve ${hoursRequested}h additional hours?`)) return;
+                notes = prompt('Any notes? (optional):') || '';
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/phases/${phaseId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        approvalStatus: action,
+                        hoursRequested: hoursRequested,
+                        approvalNotes: notes
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert(`Hour request ${action.toLowerCase()}!`);
+                    dashboardData = null; loadDashboard();
+                } else throw new Error('Failed');
+            } catch (e) { alert('Error: ' + e.message); }
+        }
+
+        // ==================== PROJECTS TAB ====================
+        async function loadProjects() {
+            try {
+                if (!assessmentsData) {
+                    const response = await fetch(`${API_URL}/assessments`);
+                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                    assessmentsData = await response.json();
+                }
+                if (!dashboardData) {
+                    const response = await fetch(API_URL);
+                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                    dashboardData = await response.json();
+                    applyFilters();
+                }
+                renderProjectsTab();
+            } catch (error) {
+                document.getElementById('tab-projects').innerHTML = `<div class="error-banner"><strong>Error:</strong> ${error.message}</div>`;
+            }
+        }
+
+        function renderProjectsTab() {
+            const assessments = assessmentsData?.assessments || [];
+            const phases = dashboardData?.phases || [];
+            const activeProjects = assessments.filter(a => a.status === 'Active');
+            const inProgress = assessments.filter(a => ['Approved', 'Confirmed'].includes(a.status) || (a.kickoffStatus === 'Scheduled'));
+            const allActive = [...activeProjects, ...inProgress];
+
+            let projectCards = '';
+            if (allActive.length > 0) {
+                projectCards = allActive.map(a => {
+                    // Find matching phase entries
+                    const projectPhases = phases.filter(p => p.project && a.title && p.project.toLowerCase().includes(a.title.toLowerCase().split(' ')[0]));
+                    const totalAlloc = projectPhases.reduce((s, p) => s + (Number(p.hoursAllocated) || 0), 0);
+                    const totalLogged = projectPhases.reduce((s, p) => s + (Number(p.hoursLogged) || 0), 0);
+                    const pct = totalAlloc > 0 ? Math.round((totalLogged / totalAlloc) * 100) : 0;
+                    const progressClass = pct > 100 ? 'progress-red' : pct > 85 ? 'progress-yellow' : 'progress-green';
+
+                    const team = [a.leadArchitect, a.seniorPM, a.assistantPM, a.bimVdc, a.coordinator].filter(Boolean);
+                    const totalHours = (Number(a.leadArchitectHours)||0)+(Number(a.seniorPMHours)||0)+(Number(a.assistantPMHours)||0)+(Number(a.bimVdcHours)||0)+(Number(a.coordinatorHours)||0)+(Number(a.leadershipHours)||0);
+
+                    let phaseChips = '';
+                    const uniquePhases = [...new Set(projectPhases.map(p => p.phase))];
+                    phaseChips = uniquePhases.map(ph => `<span class="phase-tag ${getPhaseClass(ph)}" style="margin-right:4px;">${ph}</span>`).join('');
+
+                    return `<div class="phase-card" style="margin-bottom:16px;">
+                        <div class="phase-header" onclick="this.parentElement.classList.toggle('collapsed')" style="cursor:pointer;">
+                            <div class="phase-info" style="flex:1;">
+                                <span class="phase-name" style="font-size:16px;">${a.title || 'Untitled'}</span>
+                                <span class="status-pill ${getAssessmentStatusClass(a.status)}" style="margin-left:8px;">${a.status}</span>
+                                ${phaseChips}
+                            </div>
+                            <div class="phase-stats">
+                                <div class="phase-stat"><div class="phase-stat-label">Budget</div><div class="phase-stat-value">${totalHours}h</div></div>
+                                <div class="phase-stat"><div class="phase-stat-label">Logged</div><div class="phase-stat-value">${totalLogged}h</div></div>
+                                <div class="phase-stat"><div class="phase-stat-label">Fee Floor</div><div class="phase-stat-value">${formatCurrency(a.feeFloor)}</div></div>
+                                <span class="expand-icon">▼</span>
+                            </div>
+                        </div>
+                        <div class="phase-content">
+                            ${totalAlloc > 0 ? `<div class="phase-progress-bar"><div class="phase-progress-fill ${progressClass}" style="width:${Math.min(pct,100)}%"></div></div>
+                            <div class="phase-progress-text"><span>${pct}% hours used</span><span>${totalAlloc - totalLogged}h remaining</span></div>` : ''}
+                            <div style="font-size:12px;color:#888;margin-bottom:8px;">Team: ${team.join(', ') || 'Not assigned'}</div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
+                                <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">${a.projectType || '-'}</div></div>
+                                <div class="detail-item"><div class="detail-label">Package</div><div class="detail-value">${a.package || '-'}</div></div>
+                                <div class="detail-item"><div class="detail-label">Risk</div><div class="detail-value ${getRiskClass(a.riskLevel)}">${a.riskLevel || '-'}</div></div>
+                                <div class="detail-item"><div class="detail-label">Kickoff</div><div class="detail-value">${formatDate(a.kickoffDate) || '-'}</div></div>
+                            </div>
+                            ${projectPhases.length > 0 ? `<div style="margin-top:12px;"><div style="font-size:12px;color:#888;margin-bottom:8px;">Phase Breakdown:</div>
+                                ${projectPhases.map(p => {
+                                    const pa = Number(p.hoursAllocated)||0, pl = Number(p.hoursLogged)||0;
+                                    const pp = pa > 0 ? Math.round((pl/pa)*100) : 0;
+                                    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;border-bottom:1px solid #2a2a2a;">
+                                        <span style="width:200px;color:#ccc;">${p.entry}</span>
+                                        <div style="flex:1;background:#333;border-radius:3px;height:4px;"><div style="height:100%;border-radius:3px;width:${Math.min(pp,100)}%;background:${pp>100?'#f44336':pp>85?'#FF9800':'#4CAF50'};"></div></div>
+                                        <span style="color:#888;width:80px;text-align:right;">${pl}/${pa}h</span>
+                                    </div>`;
+                                }).join('')}
+                            </div>` : ''}
+                        </div>
+                    </div>`;
+                }).join('');
+            } else {
+                projectCards = `<div class="empty-state"><div class="empty-state-icon">📂</div><div class="empty-state-title">No Active Projects</div><div class="empty-state-text">Projects will appear here once assessments are approved and kickoff is complete.</div></div>`;
+            }
+
+            document.getElementById('tab-projects').innerHTML = `
+                <div class="header">
+                    <div class="header-left"><h1>📂 Active Projects</h1><span class="badge user-badge">${activeProjects.length} Active • ${inProgress.length} In Progress</span></div>
+                    <div class="header-actions"><button class="btn" onclick="assessmentsData=null;dashboardData=null;loadProjects()">🔄 Refresh</button></div>
+                </div>
+                <div class="summary-cards">
+                    <div class="card"><div class="card-label">Active Projects</div><div class="card-value green">${activeProjects.length}</div></div>
+                    <div class="card"><div class="card-label">In Progress</div><div class="card-value gold">${inProgress.length}</div></div>
+                    <div class="card"><div class="card-label">Total Assessments</div><div class="card-value purple">${assessments.length}</div></div>
+                </div>
+                ${projectCards}`;
+        }
+
+        // ==================== HANDOFFS TAB ====================
+        async function loadHandoffs() {
+            try {
+                const response = await fetch(`${API_URL}/handoffs`);
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                handoffsData = await response.json();
+                if (!staffData) await loadStaff();
+                renderHandoffsTab();
+            } catch (error) {
+                document.getElementById('tab-handoffs').innerHTML = `<div class="error-banner"><strong>Error:</strong> ${error.message}</div>`;
+            }
+        }
+
+        function renderHandoffsTab() {
+            const role = getUserRole();
+            const roleName = getUserRoleName();
+            const handoffs = handoffsData?.handoffs || [];
+            const userLower = (filterUser || '').toLowerCase();
+
+            // SA sees submit form + their handoffs; PM/Leadership sees all incoming
+            const isSA = roleName === 'seniorArchitect';
+            const canSubmit = isSA || roleName === 'clientSolutions';
+            const myHandoffs = filterUser ? handoffs.filter(h => (h.submittedBy || '').toLowerCase().includes(userLower)) : handoffs;
+            const thisWeek = handoffs.filter(h => {
+                if (!h.weekEnding) return false;
+                const diff = Math.abs(new Date() - new Date(h.weekEnding));
+                return diff < 7 * 24 * 60 * 60 * 1000;
+            });
+
+            // Badge
+            const badge = document.getElementById('handoffsBadge');
+            if (roleName === 'seniorPM' || roleName === 'leadership') {
+                const unreviewed = thisWeek.filter(h => !h.pmReviewed);
+                if (unreviewed.length > 0) { badge.textContent = unreviewed.length; badge.style.display = 'inline'; }
+                else badge.style.display = 'none';
+            } else { badge.style.display = 'none'; }
+
+            const viewLabel = filterUser ? filterUser.split(' ')[0] : 'All';
+            const submitBtn = canSubmit ? `<button class="btn btn-primary" onclick="openHandoffModal()">📋 Submit Handoff</button>` : '';
+
+            let listHTML = '';
+            const displayHandoffs = (isSA ? myHandoffs : handoffs).slice(0, 20);
+            if (displayHandoffs.length > 0) {
+                listHTML = displayHandoffs.map(h => `
+                    <div class="phase-card collapsed" style="margin-bottom:8px;">
+                        <div class="phase-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                            <div class="phase-info">
+                                <span class="phase-name" style="font-size:14px;">${h.project || 'No Project'}</span>
+                                <span class="badge user-badge" style="font-size:10px;">${h.submittedBy || '-'}</span>
+                                <span style="font-size:11px;color:#888;">${formatDate(h.weekEnding)}</span>
+                                ${h.riskFlags ? '<span style="font-size:11px;color:#f44336;">⚠️ Risk</span>' : ''}
+                                ${h.pmReviewed ? '<span style="font-size:10px;color:#4CAF50;">✓ Reviewed</span>' : '<span style="font-size:10px;color:#FF9800;">• Pending</span>'}
+                            </div>
+                            <span class="expand-icon">▼</span>
+                        </div>
+                        <div class="phase-content">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                                <div><div class="detail-label">Hours Used</div><div class="detail-value">${h.hoursUsed || 0}h</div></div>
+                                <div><div class="detail-label">Hours Remaining</div><div class="detail-value">${h.hoursRemaining || 0}h</div></div>
+                            </div>
+                            <div style="margin-bottom:8px;"><div class="detail-label">Status Summary</div><div style="font-size:13px;color:#ccc;margin-top:4px;">${h.statusSummary || '-'}</div></div>
+                            ${h.blockers ? `<div style="margin-bottom:8px;"><div class="detail-label" style="color:#f44336;">Blockers</div><div style="font-size:13px;color:#f44336;margin-top:4px;">${h.blockers}</div></div>` : ''}
+                            <div style="margin-bottom:8px;"><div class="detail-label">Next Steps</div><div style="font-size:13px;color:#ccc;margin-top:4px;">${h.nextSteps || '-'}</div></div>
+                            ${h.riskFlags ? `<div><div class="detail-label" style="color:#FF9800;">Risk Flags</div><div style="font-size:13px;color:#FF9800;margin-top:4px;">${h.riskFlags}</div></div>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                listHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No Handoff Reports</div><div class="empty-state-text">${canSubmit ? 'Submit your first weekly handoff using the button above.' : 'Handoff reports from SAs will appear here.'}</div></div>`;
+            }
+
+            document.getElementById('tab-handoffs').innerHTML = `
+                <div class="header">
+                    <div class="header-left"><h1>📋 Weekly Handoffs</h1><span class="badge user-badge">${viewLabel}'s View</span></div>
+                    <div class="header-actions">${submitBtn}<button class="btn" onclick="handoffsData=null;loadHandoffs()">🔄 Refresh</button></div>
+                </div>
+                <div class="summary-cards">
+                    <div class="card"><div class="card-label">This Week</div><div class="card-value gold">${thisWeek.length}</div></div>
+                    <div class="card"><div class="card-label">Pending Review</div><div class="card-value orange">${thisWeek.filter(h => !h.pmReviewed).length}</div></div>
+                    <div class="card"><div class="card-label">Total Handoffs</div><div class="card-value blue">${handoffs.length}</div></div>
+                </div>
+                ${listHTML}`;
+        }
+
+        function openHandoffModal() {
+            const projects = assessmentsData?.assessments?.filter(a => a.status === 'Active') || [];
+            const projOptions = projects.map(a => `<option value="${a.title}">${a.title}</option>`).join('');
+            const today = new Date();
+            const daysUntilFriday = (5 - today.getDay() + 7) % 7 || 7;
+            const nextFriday = new Date(today); nextFriday.setDate(today.getDate() + daysUntilFriday);
+
+            const html = `<div class="modal-overlay active" id="handoffModal" onclick="if(event.target===this)this.remove()">
+                <div class="modal wide">
+                    <div class="modal-header"><h2 class="modal-title">📋 Submit Weekly Handoff</h2><button class="modal-close" onclick="document.getElementById('handoffModal').remove()">&times;</button></div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Project *</label><select class="form-select" id="handoffProject" required>${projOptions ? '<option value="">-- Select --</option>' + projOptions : '<option value="">No active projects</option>'}</select></div>
+                        <div class="form-group"><label class="form-label">Week Ending *</label><input type="date" class="form-input" id="handoffWeek" value="${nextFriday.toISOString().split('T')[0]}" required></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Status Summary *</label><textarea class="form-textarea" id="handoffStatus" required placeholder="What was accomplished this week?"></textarea></div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Hours Used This Week</label><input type="number" class="form-input" id="handoffHoursUsed" step="0.5" min="0" placeholder="0"></div>
+                        <div class="form-group"><label class="form-label">Hours Remaining</label><input type="number" class="form-input" id="handoffHoursRemain" step="0.5" min="0" placeholder="0"></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Blockers</label><textarea class="form-textarea" id="handoffBlockers" placeholder="Any blockers or issues?"></textarea></div>
+                    <div class="form-group"><label class="form-label">Next Steps</label><textarea class="form-textarea" id="handoffNext" placeholder="What's planned for next week?"></textarea></div>
+                    <div class="form-group"><label class="form-label">Risk Flags</label><input type="text" class="form-input" id="handoffRisk" placeholder="Any risks to flag? (optional)"></div>
+                    <button class="form-submit" id="handoffSubmitBtn" onclick="submitHandoff()">📤 Submit Handoff</button>
+                    <div class="form-success" id="handoffSuccess">✅ Handoff submitted! PM has been notified.</div>
+                    <div class="form-error" id="handoffError">❌ Error submitting handoff.</div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        async function submitHandoff() {
+            const btn = document.getElementById('handoffSubmitBtn');
+            btn.disabled = true; btn.textContent = '⏳ Submitting...';
+            try {
+                const response = await fetch(`${API_URL}/handoffs`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        project: document.getElementById('handoffProject').value,
+                        weekEnding: document.getElementById('handoffWeek').value,
+                        submittedBy: filterUser || 'Team Member',
+                        statusSummary: document.getElementById('handoffStatus').value,
+                        hoursUsed: document.getElementById('handoffHoursUsed').value || 0,
+                        hoursRemaining: document.getElementById('handoffHoursRemain').value || 0,
+                        blockers: document.getElementById('handoffBlockers').value,
+                        nextSteps: document.getElementById('handoffNext').value,
+                        riskFlags: document.getElementById('handoffRisk').value
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('handoffSuccess').style.display = 'block';
+                    btn.textContent = '✅ Submitted!';
+                    setTimeout(() => { document.getElementById('handoffModal')?.remove(); handoffsData = null; loadHandoffs(); }, 1500);
+                } else throw new Error('Failed');
+            } catch (e) {
+                document.getElementById('handoffError').style.display = 'block';
+                btn.disabled = false; btn.textContent = '📤 Submit Handoff';
+            }
+        }
+
+        // ==================== PM REPORTS TAB ====================
+        async function loadPMReports() {
+            try {
+                const response = await fetch(`${API_URL}/pm-reports`);
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                pmReportsData = await response.json();
+                if (!handoffsData) {
+                    const hRes = await fetch(`${API_URL}/handoffs`);
+                    handoffsData = await hRes.json();
+                }
+                renderPMReportsTab();
+            } catch (error) {
+                document.getElementById('tab-pmreports').innerHTML = `<div class="error-banner"><strong>Error:</strong> ${error.message}</div>`;
+            }
+        }
+
+        function renderPMReportsTab() {
+            const role = getUserRole();
+            const roleName = getUserRoleName();
+            const reports = pmReportsData?.reports || [];
+            const handoffs = handoffsData?.handoffs || [];
+            const canSubmit = roleName === 'seniorPM' || roleName === 'leadership';
+
+            // Handoffs available to compile
+            const thisWeekHandoffs = handoffs.filter(h => {
+                if (!h.weekEnding) return false;
+                const diff = Math.abs(new Date() - new Date(h.weekEnding));
+                return diff < 7 * 24 * 60 * 60 * 1000;
+            });
+
+            const submitBtn = canSubmit ? `<button class="btn btn-primary" onclick="openPMReportModal()">📊 Compile Report</button>` : '';
+
+            let reportsHTML = '';
+            if (reports.length > 0) {
+                reportsHTML = reports.slice(0, 15).map(r => `
+                    <div class="phase-card collapsed" style="margin-bottom:8px;">
+                        <div class="phase-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                            <div class="phase-info">
+                                <span class="phase-name" style="font-size:14px;">Week of ${formatDate(r.weekEnding)}</span>
+                                <span class="badge user-badge" style="font-size:10px;">${r.compiledBy || '-'}</span>
+                                <span class="status-pill ${r.overallStatus === 'On Track' ? 'status-approved' : r.overallStatus === 'At Risk' ? 'status-needs-revision' : 'status-declined'}">${r.overallStatus || '-'}</span>
+                                ${r.leadershipReviewed ? '<span style="font-size:10px;color:#4CAF50;">✓ Reviewed</span>' : ''}
+                            </div>
+                            <span class="expand-icon">▼</span>
+                        </div>
+                        <div class="phase-content">
+                            <div style="margin-bottom:8px;"><div class="detail-label">Project Summaries</div><div style="font-size:13px;color:#ccc;margin-top:4px;white-space:pre-line;">${r.projectSummaries || '-'}</div></div>
+                            ${r.budgetFlags ? `<div style="margin-bottom:8px;"><div class="detail-label" style="color:#FF9800;">Budget Flags</div><div style="font-size:13px;color:#FF9800;margin-top:4px;">${r.budgetFlags}</div></div>` : ''}
+                            ${r.escalations ? `<div style="margin-bottom:8px;"><div class="detail-label" style="color:#f44336;">Escalations</div><div style="font-size:13px;color:#f44336;margin-top:4px;">${r.escalations}</div></div>` : ''}
+                            ${r.staffingNotes ? `<div style="margin-bottom:8px;"><div class="detail-label">Staffing Notes</div><div style="font-size:13px;color:#ccc;margin-top:4px;">${r.staffingNotes}</div></div>` : ''}
+                            <div><div class="detail-label">Next Week Priorities</div><div style="font-size:13px;color:#ccc;margin-top:4px;">${r.nextWeekPriorities || '-'}</div></div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                reportsHTML = `<div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-title">No PM Reports</div><div class="empty-state-text">${canSubmit ? 'Compile SA handoffs into a weekly overview for leadership.' : 'PM overview reports will appear here.'}</div></div>`;
+            }
+
+            document.getElementById('tab-pmreports').innerHTML = `
+                <div class="header">
+                    <div class="header-left"><h1>📊 PM Overview Reports</h1></div>
+                    <div class="header-actions">${submitBtn}<button class="btn" onclick="pmReportsData=null;loadPMReports()">🔄 Refresh</button></div>
+                </div>
+                <div class="summary-cards">
+                    <div class="card"><div class="card-label">This Week's Handoffs</div><div class="card-value gold">${thisWeekHandoffs.length}</div><div class="card-subtitle">available to compile</div></div>
+                    <div class="card"><div class="card-label">Total Reports</div><div class="card-value blue">${reports.length}</div></div>
+                </div>
+                ${reportsHTML}`;
+        }
+
+        function openPMReportModal() {
+            const handoffs = handoffsData?.handoffs || [];
+            const thisWeek = handoffs.filter(h => { if (!h.weekEnding) return false; return Math.abs(new Date() - new Date(h.weekEnding)) < 7*24*60*60*1000; });
+            const summaryText = thisWeek.map(h => `${h.project}: ${h.statusSummary || 'No update'}${h.blockers ? ' [BLOCKER: ' + h.blockers + ']' : ''}`).join('\n');
+            const blockersText = thisWeek.filter(h => h.blockers).map(h => `${h.project}: ${h.blockers}`).join('\n');
+
+            const today = new Date();
+            const daysUntilFriday = (5 - today.getDay() + 7) % 7 || 7;
+            const nextFriday = new Date(today); nextFriday.setDate(today.getDate() + daysUntilFriday);
+
+            const html = `<div class="modal-overlay active" id="pmReportModal" onclick="if(event.target===this)this.remove()">
+                <div class="modal wide">
+                    <div class="modal-header"><h2 class="modal-title">📊 Compile PM Overview Report</h2><button class="modal-close" onclick="document.getElementById('pmReportModal').remove()">&times;</button></div>
+                    ${thisWeek.length > 0 ? `<div style="background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#4CAF50;">📋 ${thisWeek.length} handoff(s) this week auto-populated below</div>` : ''}
+                    <div class="form-group"><label class="form-label">Week Ending</label><input type="date" class="form-input" id="pmrWeek" value="${nextFriday.toISOString().split('T')[0]}"></div>
+                    <div class="form-group"><label class="form-label">Overall Status</label><select class="form-select" id="pmrStatus"><option value="On Track">🟢 On Track</option><option value="At Risk">🟡 At Risk</option><option value="Off Track">🔴 Off Track</option></select></div>
+                    <div class="form-group"><label class="form-label">Project Summaries *</label><textarea class="form-textarea" id="pmrSummaries" style="min-height:120px;" required>${summaryText}</textarea></div>
+                    <div class="form-group"><label class="form-label">Budget Flags</label><textarea class="form-textarea" id="pmrBudget" placeholder="Any budget concerns?">${blockersText}</textarea></div>
+                    <div class="form-group"><label class="form-label">Escalations</label><textarea class="form-textarea" id="pmrEscalations" placeholder="Issues needing leadership attention"></textarea></div>
+                    <div class="form-group"><label class="form-label">Staffing Notes</label><textarea class="form-textarea" id="pmrStaffing" placeholder="Team capacity, availability..."></textarea></div>
+                    <div class="form-group"><label class="form-label">Next Week Priorities</label><textarea class="form-textarea" id="pmrPriorities" placeholder="Key priorities for next week"></textarea></div>
+                    <button class="form-submit" id="pmrSubmitBtn" onclick="submitPMReport()">📤 Submit to Leadership</button>
+                    <div class="form-success" id="pmrSuccess">✅ Report submitted! Leadership has been notified.</div>
+                    <div class="form-error" id="pmrError">❌ Error submitting report.</div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        async function submitPMReport() {
+            const btn = document.getElementById('pmrSubmitBtn');
+            btn.disabled = true; btn.textContent = '⏳ Submitting...';
+            try {
+                const response = await fetch(`${API_URL}/pm-reports`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        compiledBy: filterUser || 'Tammia Marcano',
+                        weekEnding: document.getElementById('pmrWeek').value,
+                        overallStatus: document.getElementById('pmrStatus').value,
+                        projectSummaries: document.getElementById('pmrSummaries').value,
+                        budgetFlags: document.getElementById('pmrBudget').value,
+                        escalations: document.getElementById('pmrEscalations').value,
+                        staffingNotes: document.getElementById('pmrStaffing').value,
+                        nextWeekPriorities: document.getElementById('pmrPriorities').value
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('pmrSuccess').style.display = 'block';
+                    btn.textContent = '✅ Submitted!';
+                    setTimeout(() => { document.getElementById('pmReportModal')?.remove(); pmReportsData = null; loadPMReports(); }, 1500);
+                } else throw new Error('Failed');
+            } catch (e) {
+                document.getElementById('pmrError').style.display = 'block';
+                btn.disabled = false; btn.textContent = '📤 Submit to Leadership';
+            }
+        }
+
+        // ==================== CLIENTS TAB ====================
+        async function loadClients() {
+            try {
+                const response = await fetch(`${API_URL}/clients`);
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                clientsData = await response.json();
+                renderClientsTab();
+            } catch (error) {
+                document.getElementById('tab-clients').innerHTML = `<div class="error-banner"><strong>Error:</strong> ${error.message}</div>`;
+            }
+        }
+
+        function renderClientsTab() {
+            const role = getUserRole();
+            const clients = clientsData?.clients || [];
+            const canEdit = role.canEditClients;
+
+            let tableRows = clients.map(c => `
+                <tr>
+                    <td><strong>${c.name || '-'}</strong></td>
+                    <td><span class="status-pill ${c.status === 'Active' ? 'status-approved' : c.status === 'Prospect' ? 'status-submitted' : 'status-draft'}">${c.status || '-'}</span></td>
+                    <td>${c.projectType || '-'}</td>
+                    <td>${c.email || '-'}</td>
+                    <td>${c.phone || '-'}</td>
+                    <td>${canEdit ? `<button class="action-btn small" onclick="openEditClientModal('${c.id}')">✏️ Edit</button>` : '-'}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('tab-clients').innerHTML = `
+                <div class="header">
+                    <div class="header-left"><h1>👥 Client Portal</h1><span class="badge user-badge">${clients.length} clients</span></div>
+                    <div class="header-actions"><button class="btn" onclick="clientsData=null;loadClients()">🔄 Refresh</button></div>
+                </div>
+                <div class="summary-cards">
+                    <div class="card"><div class="card-label">Active Clients</div><div class="card-value green">${clients.filter(c => c.status === 'Active').length}</div></div>
+                    <div class="card"><div class="card-label">Prospects</div><div class="card-value gold">${clients.filter(c => c.status === 'Prospect').length}</div></div>
+                    <div class="card"><div class="card-label">Total</div><div class="card-value blue">${clients.length}</div></div>
+                </div>
+                ${clients.length > 0 ? `<div style="overflow-x:auto;">
+                    <table class="assessment-table">
+                        <thead><tr><th>Client</th><th>Status</th><th>Type</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                </div>` : '<div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">No Clients</div></div>'}`;
+        }
+
+        function openEditClientModal(clientId) {
+            const client = clientsData?.clients?.find(c => c.id === clientId);
+            if (!client) return;
+
+            const html = `<div class="modal-overlay active" id="editClientModal" onclick="if(event.target===this)this.remove()">
+                <div class="modal">
+                    <div class="modal-header"><h2 class="modal-title">✏️ Edit Client</h2><button class="modal-close" onclick="document.getElementById('editClientModal').remove()">&times;</button></div>
+                    <div class="form-group"><label class="form-label">Client Name</label><input type="text" class="form-input" id="editClientName" value="${client.name || ''}"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="editClientStatus"><option ${client.status==='Active'?'selected':''}>Active</option><option ${client.status==='Prospect'?'selected':''}>Prospect</option><option ${client.status==='Inactive'?'selected':''}>Inactive</option><option ${client.status==='Archived'?'selected':''}>Archived</option></select></div>
+                        <div class="form-group"><label class="form-label">Project Type</label><select class="form-select" id="editClientType"><option value="">-- Select --</option><option ${client.projectType==='Small Residential'?'selected':''}>Small Residential</option><option ${client.projectType==='Medium/Large Residential'?'selected':''}>Medium/Large Residential</option><option ${client.projectType==='Commercial / Retail'?'selected':''}>Commercial / Retail</option><option ${client.projectType==='TFO / Industrial / Special'?'selected':''}>TFO / Industrial / Special</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="editClientEmail" value="${client.email || ''}"></div>
+                        <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" id="editClientPhone" value="${client.phone || ''}"></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="editClientNotes">${client.notes || ''}</textarea></div>
+                    <button class="form-submit" id="editClientBtn" onclick="saveClient('${clientId}')">💾 Save Changes</button>
+                    <div class="form-success" id="editClientSuccess">✅ Client updated!</div>
+                    <div class="form-error" id="editClientError">❌ Error updating client.</div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        async function saveClient(clientId) {
+            const btn = document.getElementById('editClientBtn');
+            btn.disabled = true; btn.textContent = '⏳ Saving...';
+            try {
+                const response = await fetch(`${API_URL}/clients/${clientId}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('editClientName').value,
+                        status: document.getElementById('editClientStatus').value,
+                        projectType: document.getElementById('editClientType').value,
+                        email: document.getElementById('editClientEmail').value,
+                        phone: document.getElementById('editClientPhone').value,
+                        notes: document.getElementById('editClientNotes').value,
+                        lastContact: new Date().toISOString().split('T')[0]
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('editClientSuccess').style.display = 'block';
+                    btn.textContent = '✅ Saved!';
+                    setTimeout(() => { document.getElementById('editClientModal')?.remove(); clientsData = null; loadClients(); }, 1500);
+                } else throw new Error('Failed');
+            } catch (e) {
+                document.getElementById('editClientError').style.display = 'block';
+                btn.disabled = false; btn.textContent = '💾 Save Changes';
+            }
+        }
+
+        // ==================== COORDINATION TAB ====================
+        async function loadCoordination() {
+            try {
+                const response = await fetch(`${API_URL}/coordination`);
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                coordinationData = await response.json();
+                renderCoordinationTab();
+            } catch (error) {
+                document.getElementById('tab-coordination').innerHTML = `<div class="error-banner"><strong>Error:</strong> ${error.message}</div>`;
+            }
+        }
+
+        function renderCoordinationTab() {
+            const entries = coordinationData?.entries || [];
+            const active = entries.filter(e => e.status === 'Active');
+            const pending = entries.filter(e => e.status === 'Pending' || e.contractStatus === 'Pending');
+
+            let tableRows = entries.map(e => `
+                <tr>
+                    <td><strong>${e.consultantName || '-'}</strong><div style="font-size:11px;color:#888;">${e.firm || ''}</div></td>
+                    <td>${e.discipline || '-'}</td>
+                    <td>${e.project || '-'}</td>
+                    <td><span class="status-pill ${e.status === 'Active' ? 'status-approved' : e.status === 'Pending' ? 'status-submitted' : 'status-draft'}">${e.status || '-'}</span></td>
+                    <td><span class="status-pill ${e.contractStatus === 'Signed' ? 'status-approved' : e.contractStatus === 'Pending' ? 'status-submitted' : 'status-needs-revision'}">${e.contractStatus || '-'}</span></td>
+                    <td>${formatDate(e.deliverableDue)}</td>
+                    <td>${e.fee ? formatCurrency(e.fee) : '-'}</td>
+                    <td><button class="action-btn small" onclick="openEditCoordModal('${e.id}')">✏️</button></td>
+                </tr>
+            `).join('');
+
+            document.getElementById('tab-coordination').innerHTML = `
+                <div class="header">
+                    <div class="header-left"><h1>🤝 External Coordination</h1><span class="badge user-badge">Melissa's Tracker</span></div>
+                    <div class="header-actions"><button class="btn btn-primary" onclick="openAddCoordModal()">+ Add Consultant</button><button class="btn" onclick="coordinationData=null;loadCoordination()">🔄 Refresh</button></div>
+                </div>
+                <div class="summary-cards">
+                    <div class="card"><div class="card-label">Active</div><div class="card-value green">${active.length}</div></div>
+                    <div class="card"><div class="card-label">Pending</div><div class="card-value orange">${pending.length}</div></div>
+                    <div class="card"><div class="card-label">Total</div><div class="card-value gold">${entries.length}</div></div>
+                    <div class="card"><div class="card-label">Total Fees</div><div class="card-value blue">${formatCurrency(entries.reduce((s,e) => s + (Number(e.fee)||0), 0))}</div></div>
+                </div>
+                ${entries.length > 0 ? `<div style="overflow-x:auto;"><table class="assessment-table">
+                    <thead><tr><th>Consultant</th><th>Discipline</th><th>Project</th><th>Status</th><th>Contract</th><th>Deliverable Due</th><th>Fee</th><th></th></tr></thead>
+                    <tbody>${tableRows}</tbody>
+                </table></div>` : '<div class="empty-state"><div class="empty-state-icon">🤝</div><div class="empty-state-title">No Consultants</div><div class="empty-state-text">Add consultants to track external coordination.</div></div>'}`;
+        }
+
+        function openAddCoordModal(existing) {
+            const e = existing || {};
+            const isEdit = !!e.id;
+            const html = `<div class="modal-overlay active" id="coordModal" onclick="if(event.target===this)this.remove()">
+                <div class="modal wide">
+                    <div class="modal-header"><h2 class="modal-title">${isEdit ? '✏️ Edit' : '➕ Add'} Consultant</h2><button class="modal-close" onclick="document.getElementById('coordModal').remove()">&times;</button></div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Consultant Name *</label><input type="text" class="form-input" id="coordName" value="${e.consultantName||''}" required></div>
+                        <div class="form-group"><label class="form-label">Firm</label><input type="text" class="form-input" id="coordFirm" value="${e.firm||''}"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Discipline</label><select class="form-select" id="coordDiscipline"><option value="">-- Select --</option><option ${e.discipline==='Structural'?'selected':''}>Structural</option><option ${e.discipline==='MEP'?'selected':''}>MEP</option><option ${e.discipline==='Civil'?'selected':''}>Civil</option><option ${e.discipline==='Landscape'?'selected':''}>Landscape</option><option ${e.discipline==='Interior Design'?'selected':''}>Interior Design</option><option ${e.discipline==='Surveyor'?'selected':''}>Surveyor</option><option ${e.discipline==='Geotech'?'selected':''}>Geotech</option><option ${e.discipline==='Other'?'selected':''}>Other</option></select></div>
+                        <div class="form-group"><label class="form-label">Project</label><input type="text" class="form-input" id="coordProject" value="${e.project||''}"></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Scope</label><textarea class="form-textarea" id="coordScope">${e.scope||''}</textarea></div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="coordStatus"><option ${e.status==='Active'?'selected':''}>Active</option><option ${e.status==='Pending'?'selected':''}>Pending</option><option ${e.status==='Complete'?'selected':''}>Complete</option><option ${e.status==='On Hold'?'selected':''}>On Hold</option></select></div>
+                        <div class="form-group"><label class="form-label">Contract Status</label><select class="form-select" id="coordContract"><option value="">-- Select --</option><option ${e.contractStatus==='Pending'?'selected':''}>Pending</option><option ${e.contractStatus==='Sent'?'selected':''}>Sent</option><option ${e.contractStatus==='Signed'?'selected':''}>Signed</option><option ${e.contractStatus==='Expired'?'selected':''}>Expired</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Contact Email</label><input type="email" class="form-input" id="coordEmail" value="${e.contactEmail||''}"></div>
+                        <div class="form-group"><label class="form-label">Contact Phone</label><input type="tel" class="form-input" id="coordPhone" value="${e.contactPhone||''}"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Fee ($)</label><input type="number" class="form-input" id="coordFee" value="${e.fee||''}" step="0.01" min="0"></div>
+                        <div class="form-group"><label class="form-label">Deliverable Due</label><input type="date" class="form-input" id="coordDue" value="${e.deliverableDue||''}"></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="coordNotes">${e.notes||''}</textarea></div>
+                    <button class="form-submit" id="coordSubmitBtn" onclick="${isEdit ? `saveCoord('${e.id}')` : 'createCoord()'}">${isEdit ? '💾 Save Changes' : '➕ Add Consultant'}</button>
+                    <div class="form-success" id="coordSuccess">✅ ${isEdit ? 'Updated' : 'Added'}!</div>
+                    <div class="form-error" id="coordError">❌ Error.</div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function openEditCoordModal(id) {
+            const entry = coordinationData?.entries?.find(e => e.id === id);
+            if (entry) openAddCoordModal(entry);
+        }
+
+        function getCoordFormData() {
+            return {
+                consultantName: document.getElementById('coordName').value,
+                firm: document.getElementById('coordFirm').value,
+                discipline: document.getElementById('coordDiscipline').value,
+                project: document.getElementById('coordProject').value,
+                scope: document.getElementById('coordScope').value,
+                status: document.getElementById('coordStatus').value,
+                contractStatus: document.getElementById('coordContract').value,
+                contactEmail: document.getElementById('coordEmail').value,
+                contactPhone: document.getElementById('coordPhone').value,
+                fee: document.getElementById('coordFee').value,
+                deliverableDue: document.getElementById('coordDue').value,
+                notes: document.getElementById('coordNotes').value,
+                trackedBy: filterUser || 'Melissa Galeano'
+            };
+        }
+
+        async function createCoord() {
+            const btn = document.getElementById('coordSubmitBtn');
+            btn.disabled = true; btn.textContent = '⏳ Creating...';
+            try {
+                const response = await fetch(`${API_URL}/coordination`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(getCoordFormData()) });
+                const result = await response.json();
+                if (result.success) { document.getElementById('coordSuccess').style.display = 'block'; btn.textContent = '✅ Added!'; setTimeout(() => { document.getElementById('coordModal')?.remove(); coordinationData = null; loadCoordination(); }, 1500); }
+                else throw new Error('Failed');
+            } catch (e) { document.getElementById('coordError').style.display = 'block'; btn.disabled = false; btn.textContent = '➕ Add Consultant'; }
+        }
+
+        async function saveCoord(id) {
+            const btn = document.getElementById('coordSubmitBtn');
+            btn.disabled = true; btn.textContent = '⏳ Saving...';
+            try {
+                const response = await fetch(`${API_URL}/coordination/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(getCoordFormData()) });
+                const result = await response.json();
+                if (result.success) { document.getElementById('coordSuccess').style.display = 'block'; btn.textContent = '✅ Saved!'; setTimeout(() => { document.getElementById('coordModal')?.remove(); coordinationData = null; loadCoordination(); }, 1500); }
+                else throw new Error('Failed');
+            } catch (e) { document.getElementById('coordError').style.display = 'block'; btn.disabled = false; btn.textContent = '💾 Save Changes'; }
+        }
+
+        // ==================== INVOICES TAB ====================
+        async function loadInvoices() {
+            try {
+                const response = await fetch(`${API_URL}/invoices`);
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                invoicesData = await response.json();
+                renderInvoicesTab();
+            } catch (error) {
+                document.getElementById('tab-invoices').innerHTML = `<div class="error-banner"><strong>Error:</strong> ${error.message}</div>`;
+            }
+        }
+
+        function renderInvoicesTab() {
+            const invoices = invoicesData?.invoices || [];
+            const paid = invoices.filter(i => i.status === 'Paid');
+            const pending = invoices.filter(i => i.status === 'Sent' || i.status === 'Outstanding');
+            const overdue = invoices.filter(i => { if (i.status === 'Paid') return false; if (!i.dueDate) return false; return new Date(i.dueDate) < new Date(); });
+            const totalReceived = paid.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+            const totalOutstanding = pending.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+
+            let tableRows = invoices.map(i => {
+                const isOverdue = i.status !== 'Paid' && i.dueDate && new Date(i.dueDate) < new Date();
+                return `<tr>
+                    <td><strong>${i.invoiceNumber || '-'}</strong></td>
+                    <td>${i.client || '-'}</td>
+                    <td>${i.project || '-'}</td>
+                    <td style="font-weight:600;color:#C9A227;">${formatCurrency(i.amount)}</td>
+                    <td><span class="status-pill ${i.status === 'Paid' ? 'status-approved' : i.status === 'Sent' ? 'status-submitted' : i.status === 'Draft' ? 'status-draft' : 'status-needs-revision'}">${i.status || 'Draft'}</span>${isOverdue ? ' <span style="color:#f44336;font-size:10px;">OVERDUE</span>' : ''}</td>
+                    <td>${formatDate(i.invoiceDate)}</td>
+                    <td ${isOverdue ? 'style="color:#f44336;font-weight:600;"' : ''}>${formatDate(i.dueDate)}</td>
+                    <td>${formatDate(i.paidDate)}</td>
+                    <td><button class="action-btn small" onclick="openEditInvoiceModal('${i.id}')">✏️</button></td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('tab-invoices').innerHTML = `
+                <div class="header">
+                    <div class="header-left"><h1>💰 Invoices & Payments</h1></div>
+                    <div class="header-actions"><button class="btn btn-primary" onclick="openAddInvoiceModal()">+ New Invoice</button><button class="btn" onclick="invoicesData=null;loadInvoices()">🔄 Refresh</button></div>
+                </div>
+                <div class="summary-cards">
+                    <div class="card"><div class="card-label">Total Received</div><div class="card-value green">${formatCurrency(totalReceived)}</div></div>
+                    <div class="card"><div class="card-label">Outstanding</div><div class="card-value orange">${formatCurrency(totalOutstanding)}</div></div>
+                    <div class="card"><div class="card-label">Overdue</div><div class="card-value red">${overdue.length}</div></div>
+                    <div class="card"><div class="card-label">Total Invoices</div><div class="card-value gold">${invoices.length}</div></div>
+                </div>
+                ${overdue.length > 0 ? `<div class="alert-banner"><span class="alert-icon">🚨</span><div class="alert-content"><div class="alert-title">${overdue.length} Overdue Invoice${overdue.length > 1 ? 's' : ''}</div><div class="alert-text">${overdue.map(i => `${i.invoiceNumber}: ${formatCurrency(i.amount)} (due ${formatDate(i.dueDate)})`).join(' • ')}</div></div></div>` : ''}
+                ${invoices.length > 0 ? `<div style="overflow-x:auto;"><table class="assessment-table">
+                    <thead><tr><th>Invoice #</th><th>Client</th><th>Project</th><th>Amount</th><th>Status</th><th>Issued</th><th>Due</th><th>Paid</th><th></th></tr></thead>
+                    <tbody>${tableRows}</tbody>
+                </table></div>` : '<div class="empty-state"><div class="empty-state-icon">💰</div><div class="empty-state-title">No Invoices</div><div class="empty-state-text">Create your first invoice to start tracking payments.</div></div>'}
+                <div style="margin-top:20px;padding:16px;background:#252525;border-radius:12px;border:1px solid #333;">
+                    <div class="section-title">🔗 QuickBooks Integration</div>
+                    <div style="font-size:13px;color:#888;margin-top:8px;">Connect via Zapier to auto-sync invoices with QuickBooks. Webhook URL: <code style="background:#191919;padding:2px 6px;border-radius:4px;font-size:12px;">${API_URL}/invoices</code></div>
+                </div>`;
+        }
+
+        function openAddInvoiceModal(existing) {
+            const i = existing || {};
+            const isEdit = !!i.id;
+            const clients = clientsData?.clients || [];
+            const clientOpts = clients.map(c => `<option value="${c.name}" ${i.client===c.name?'selected':''}>${c.name}</option>`).join('');
+
+            const html = `<div class="modal-overlay active" id="invoiceModal" onclick="if(event.target===this)this.remove()">
+                <div class="modal wide">
+                    <div class="modal-header"><h2 class="modal-title">${isEdit ? '✏️ Edit' : '➕ New'} Invoice</h2><button class="modal-close" onclick="document.getElementById('invoiceModal').remove()">&times;</button></div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Invoice Number *</label><input type="text" class="form-input" id="invNumber" value="${i.invoiceNumber||''}" required placeholder="INV-001"></div>
+                        <div class="form-group"><label class="form-label">Client</label><select class="form-select" id="invClient"><option value="">-- Select --</option>${clientOpts}</select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Project</label><input type="text" class="form-input" id="invProject" value="${i.project||''}"></div>
+                        <div class="form-group"><label class="form-label">Phase</label><input type="text" class="form-input" id="invPhase" value="${i.phase||''}" placeholder="e.g. SD, DD, CD"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Amount ($) *</label><input type="number" class="form-input" id="invAmount" value="${i.amount||''}" step="0.01" min="0" required></div>
+                        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="invStatus"><option ${i.status==='Draft'?'selected':''}>Draft</option><option ${i.status==='Sent'?'selected':''}>Sent</option><option ${i.status==='Outstanding'?'selected':''}>Outstanding</option><option ${i.status==='Paid'?'selected':''}>Paid</option><option ${i.status==='Void'?'selected':''}>Void</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Invoice Date</label><input type="date" class="form-input" id="invDate" value="${i.invoiceDate || new Date().toISOString().split('T')[0]}"></div>
+                        <div class="form-group"><label class="form-label">Due Date</label><input type="date" class="form-input" id="invDue" value="${i.dueDate||''}"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Paid Date</label><input type="date" class="form-input" id="invPaid" value="${i.paidDate||''}"></div>
+                        <div class="form-group"><label class="form-label">Payment Method</label><select class="form-select" id="invMethod"><option value="">-- Select --</option><option ${i.paymentMethod==='ACH'?'selected':''}>ACH</option><option ${i.paymentMethod==='Check'?'selected':''}>Check</option><option ${i.paymentMethod==='Wire'?'selected':''}>Wire</option><option ${i.paymentMethod==='Credit Card'?'selected':''}>Credit Card</option><option ${i.paymentMethod==='Other'?'selected':''}>Other</option></select></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="invNotes">${i.notes||''}</textarea></div>
+                    <button class="form-submit" id="invSubmitBtn" onclick="${isEdit ? `saveInvoice('${i.id}')` : 'createInvoice()'}">${isEdit ? '💾 Save' : '➕ Create Invoice'}</button>
+                    <div class="form-success" id="invSuccess">✅ ${isEdit ? 'Updated' : 'Created'}!</div>
+                    <div class="form-error" id="invError">❌ Error.</div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function openEditInvoiceModal(id) {
+            const inv = invoicesData?.invoices?.find(i => i.id === id);
+            if (inv) openAddInvoiceModal(inv);
+        }
+
+        function getInvoiceFormData() {
+            return {
+                invoiceNumber: document.getElementById('invNumber').value,
+                client: document.getElementById('invClient').value,
+                project: document.getElementById('invProject').value,
+                phase: document.getElementById('invPhase').value,
+                amount: document.getElementById('invAmount').value,
+                status: document.getElementById('invStatus').value,
+                invoiceDate: document.getElementById('invDate').value,
+                dueDate: document.getElementById('invDue').value,
+                paidDate: document.getElementById('invPaid').value,
+                paymentMethod: document.getElementById('invMethod').value,
+                notes: document.getElementById('invNotes').value,
+                createdBy: filterUser || 'Jeremiah Bridges'
+            };
+        }
+
+        async function createInvoice() {
+            const btn = document.getElementById('invSubmitBtn'); btn.disabled = true; btn.textContent = '⏳ Creating...';
+            try {
+                const response = await fetch(`${API_URL}/invoices`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(getInvoiceFormData()) });
+                const result = await response.json();
+                if (result.success) { document.getElementById('invSuccess').style.display = 'block'; btn.textContent = '✅ Created!'; setTimeout(() => { document.getElementById('invoiceModal')?.remove(); invoicesData = null; loadInvoices(); }, 1500); }
+                else throw new Error('Failed');
+            } catch (e) { document.getElementById('invError').style.display = 'block'; btn.disabled = false; btn.textContent = '➕ Create Invoice'; }
+        }
+
+        async function saveInvoice(id) {
+            const btn = document.getElementById('invSubmitBtn'); btn.disabled = true; btn.textContent = '⏳ Saving...';
+            try {
+                const response = await fetch(`${API_URL}/invoices/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(getInvoiceFormData()) });
+                const result = await response.json();
+                if (result.success) { document.getElementById('invSuccess').style.display = 'block'; btn.textContent = '✅ Saved!'; setTimeout(() => { document.getElementById('invoiceModal')?.remove(); invoicesData = null; loadInvoices(); }, 1500); }
+                else throw new Error('Failed');
+            } catch (e) { document.getElementById('invError').style.display = 'block'; btn.disabled = false; btn.textContent = '💾 Save'; }
         }
 
         // ==================== CHARTS ====================
