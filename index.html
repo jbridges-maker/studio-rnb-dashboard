@@ -3037,6 +3037,7 @@
 
         // ==================== SUBMIT KICKOFF ====================
         async function submitKickoff(btnEl) {
+            alert('Submit clicked - function reached');
             try {
                 const a = kickoffState.selectedAssessment;
                 if (!a) { alert('No assessment selected. Please select a project first.'); return; }
