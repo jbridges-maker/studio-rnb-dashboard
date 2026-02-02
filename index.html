@@ -3098,13 +3098,13 @@
             } catch (e) { alert('Error: ' + e.message); }
         }
 
-        // ==================== PROJECTS TAB ====================
+        // ==================== PROJECTS TAB (reads from Client Portal) ====================
         async function loadProjects() {
             try {
-                if (!assessmentsData) {
-                    const response = await fetch(`${API_URL}/assessments`);
+                if (!clientsData) {
+                    const response = await fetch(`${API_URL}/clients`);
                     if (!response.ok) throw new Error(`API Error: ${response.status}`);
-                    assessmentsData = await response.json();
+                    clientsData = await response.json();
                 }
                 if (!dashboardData) {
                     const response = await fetch(API_URL);
@@ -3119,53 +3119,64 @@
         }
 
         function renderProjectsTab() {
-            const assessments = assessmentsData?.assessments || [];
+            const clients = clientsData?.clients || [];
             const phases = dashboardData?.phases || [];
-            const activeProjects = assessments.filter(a => a.status === 'Active');
-            const inProgress = assessments.filter(a => ['Approved', 'Confirmed'].includes(a.status) || (a.kickoffStatus === 'Scheduled'));
-            const allActive = [...activeProjects, ...inProgress];
+            const activeProjects = clients.filter(c => c.status === 'Active');
 
             let projectCards = '';
-            if (allActive.length > 0) {
-                projectCards = allActive.map(a => {
-                    // Find matching phase entries
-                    const projectPhases = phases.filter(p => p.project && a.title && p.project.toLowerCase().includes(a.title.toLowerCase().split(' ')[0]));
+            if (activeProjects.length > 0) {
+                projectCards = activeProjects.map(c => {
+                    const progress = Number(c.projectProgress) || 0;
+                    const progressClass = progress > 75 ? 'progress-green' : progress > 50 ? 'progress-yellow' : '';
+
+                    // Match phases by client name
+                    const clientNameLower = (c.name || '').toLowerCase();
+                    const projectPhases = phases.filter(p => p.project && clientNameLower && p.project.toLowerCase().includes(clientNameLower.split(' ')[0]));
                     const totalAlloc = projectPhases.reduce((s, p) => s + (Number(p.hoursAllocated) || 0), 0);
                     const totalLogged = projectPhases.reduce((s, p) => s + (Number(p.hoursLogged) || 0), 0);
-                    const pct = totalAlloc > 0 ? Math.round((totalLogged / totalAlloc) * 100) : 0;
-                    const progressClass = pct > 100 ? 'progress-red' : pct > 85 ? 'progress-yellow' : 'progress-green';
+                    const hoursPct = totalAlloc > 0 ? Math.round((totalLogged / totalAlloc) * 100) : 0;
 
-                    const team = [a.leadArchitect, a.seniorPM, a.assistantPM, a.bimVdc, a.coordinator].filter(Boolean);
-                    const totalHours = (Number(a.leadArchitectHours)||0)+(Number(a.seniorPMHours)||0)+(Number(a.assistantPMHours)||0)+(Number(a.bimVdcHours)||0)+(Number(a.coordinatorHours)||0)+(Number(a.leadershipHours)||0);
-
-                    let phaseChips = '';
-                    const uniquePhases = [...new Set(projectPhases.map(p => p.phase))];
-                    phaseChips = uniquePhases.map(ph => `<span class="phase-tag ${getPhaseClass(ph)}" style="margin-right:4px;">${ph}</span>`).join('');
+                    const team = [c.projectDesigner, c.projectManager, c.additionalTeam].filter(Boolean).map(t => t.split('(')[0].trim());
 
                     return `<div class="phase-card" style="margin-bottom:16px;">
                         <div class="phase-header" onclick="this.parentElement.classList.toggle('collapsed')" style="cursor:pointer;">
                             <div class="phase-info" style="flex:1;">
-                                <span class="phase-name" style="font-size:16px;">${a.title || 'Untitled'}</span>
-                                <span class="status-pill ${getAssessmentStatusClass(a.status)}" style="margin-left:8px;">${a.status}</span>
-                                ${phaseChips}
+                                <span class="phase-name" style="font-size:16px;">${c.name || 'Untitled'}</span>
+                                <span class="phase-tag">${c.projectTracker || '-'}</span>
+                                <span class="status-pill status-approved">${c.status}</span>
                             </div>
                             <div class="phase-stats">
-                                <div class="phase-stat"><div class="phase-stat-label">Budget</div><div class="phase-stat-value">${totalHours}h</div></div>
+                                <div class="phase-stat"><div class="phase-stat-label">Progress</div><div class="phase-stat-value">${progress}%</div></div>
+                                <div class="phase-stat"><div class="phase-stat-label">Budget</div><div class="phase-stat-value">${totalAlloc}h</div></div>
                                 <div class="phase-stat"><div class="phase-stat-label">Logged</div><div class="phase-stat-value">${totalLogged}h</div></div>
-                                <div class="phase-stat"><div class="phase-stat-label">Fee Floor</div><div class="phase-stat-value">${formatCurrency(a.feeFloor)}</div></div>
                                 <span class="expand-icon">▼</span>
                             </div>
                         </div>
                         <div class="phase-content">
-                            ${totalAlloc > 0 ? `<div class="phase-progress-bar"><div class="phase-progress-fill ${progressClass}" style="width:${Math.min(pct,100)}%"></div></div>
-                            <div class="phase-progress-text"><span>${pct}% hours used</span><span>${totalAlloc - totalLogged}h remaining</span></div>` : ''}
-                            <div style="font-size:12px;color:#888;margin-bottom:8px;">Team: ${team.join(', ') || 'Not assigned'}</div>
-                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
-                                <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">${a.projectType || '-'}</div></div>
-                                <div class="detail-item"><div class="detail-label">Package</div><div class="detail-value">${a.package || '-'}</div></div>
-                                <div class="detail-item"><div class="detail-label">Risk</div><div class="detail-value ${getRiskClass(a.riskLevel)}">${a.riskLevel || '-'}</div></div>
-                                <div class="detail-item"><div class="detail-label">Kickoff</div><div class="detail-value">${formatDate(a.kickoffDate) || '-'}</div></div>
+                            <div style="display:flex;gap:16px;margin-bottom:12px;">
+                                <div style="flex:1;">
+                                    <div style="font-size:11px;color:#888;margin-bottom:4px;">Project Progress</div>
+                                    <div class="phase-progress-bar"><div class="phase-progress-fill ${progressClass}" style="width:${progress}%"></div></div>
+                                    <div class="phase-progress-text"><span>${progress}%</span><span>${c.projectTracker || '-'}</span></div>
+                                </div>
+                                ${totalAlloc > 0 ? `<div style="flex:1;">
+                                    <div style="font-size:11px;color:#888;margin-bottom:4px;">Hours Usage</div>
+                                    <div class="phase-progress-bar"><div class="phase-progress-fill ${hoursPct > 100 ? 'progress-red' : hoursPct > 85 ? 'progress-yellow' : 'progress-green'}" style="width:${Math.min(hoursPct,100)}%"></div></div>
+                                    <div class="phase-progress-text"><span>${hoursPct}% used</span><span>${totalAlloc - totalLogged}h left</span></div>
+                                </div>` : ''}
                             </div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:12px;">
+                                <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">${c.projectType || '-'}</div></div>
+                                <div class="detail-item"><div class="detail-label">Designer</div><div class="detail-value">${(c.projectDesigner||'-').split('(')[0].trim()}</div></div>
+                                <div class="detail-item"><div class="detail-label">PM</div><div class="detail-value">${(c.projectManager||'-').split('(')[0].trim()}</div></div>
+                                <div class="detail-item"><div class="detail-label">Target Completion</div><div class="detail-value">${formatDate(c.targetCompletionDate) || '-'}</div></div>
+                                <div class="detail-item"><div class="detail-label">Budget</div><div class="detail-value">${c.targetBudget || '-'}</div></div>
+                                <div class="detail-item"><div class="detail-label">Deposit</div><div class="detail-value">${c.depositStatus || '-'}</div></div>
+                                <div class="detail-item"><div class="detail-label">Services</div><div class="detail-value">${c.servicesRequested || '-'}</div></div>
+                                <div class="detail-item"><div class="detail-label">Email</div><div class="detail-value">${c.email || '-'}</div></div>
+                            </div>
+                            ${c.projectDescription ? `<div style="margin-bottom:12px;"><div class="detail-label">Description</div><div style="font-size:12px;color:#ccc;margin-top:4px;">${c.projectDescription}</div></div>` : ''}
+                            ${c.latestUpdate ? `<div style="padding:10px;background:rgba(201,162,39,0.08);border-radius:8px;border:1px solid rgba(201,162,39,0.2);"><div class="detail-label" style="color:#C9A227;">Latest Update</div><div style="font-size:12px;color:#ccc;margin-top:4px;">${c.latestUpdate}</div></div>` : ''}
                             ${projectPhases.length > 0 ? `<div style="margin-top:12px;"><div style="font-size:12px;color:#888;margin-bottom:8px;">Phase Breakdown:</div>
                                 ${projectPhases.map(p => {
                                     const pa = Number(p.hoursAllocated)||0, pl = Number(p.hoursLogged)||0;
@@ -3181,18 +3192,18 @@
                     </div>`;
                 }).join('');
             } else {
-                projectCards = `<div class="empty-state"><div class="empty-state-icon">📂</div><div class="empty-state-title">No Active Projects</div><div class="empty-state-text">Projects will appear here once assessments are approved and kickoff is complete.</div></div>`;
+                projectCards = `<div class="empty-state"><div class="empty-state-icon">📂</div><div class="empty-state-title">No Active Projects</div><div class="empty-state-text">Projects will appear here once clients are set to Active in the Client Portal.</div></div>`;
             }
 
             document.getElementById('tab-projects').innerHTML = `
                 <div class="header">
-                    <div class="header-left"><h1>📂 Active Projects</h1><span class="badge user-badge">${activeProjects.length} Active • ${inProgress.length} In Progress</span></div>
-                    <div class="header-actions"><button class="btn" onclick="assessmentsData=null;dashboardData=null;loadProjects()">🔄 Refresh</button></div>
+                    <div class="header-left"><h1>📂 Active Projects</h1><span class="badge user-badge">${activeProjects.length} Active • synced with Softr</span></div>
+                    <div class="header-actions"><button class="btn" onclick="clientsData=null;dashboardData=null;loadProjects()">🔄 Refresh</button></div>
                 </div>
                 <div class="summary-cards">
                     <div class="card"><div class="card-label">Active Projects</div><div class="card-value green">${activeProjects.length}</div></div>
-                    <div class="card"><div class="card-label">In Progress</div><div class="card-value gold">${inProgress.length}</div></div>
-                    <div class="card"><div class="card-label">Total Assessments</div><div class="card-value purple">${assessments.length}</div></div>
+                    <div class="card"><div class="card-label">Avg Progress</div><div class="card-value gold">${activeProjects.length > 0 ? Math.round(activeProjects.reduce((s,c) => s + (Number(c.projectProgress)||0), 0) / activeProjects.length) : 0}%</div></div>
+                    <div class="card"><div class="card-label">Total Clients</div><div class="card-value blue">${clients.length}</div></div>
                 </div>
                 ${projectCards}`;
         }
@@ -3469,12 +3480,13 @@
             }
         }
 
-        // ==================== CLIENTS TAB ====================
+        // ==================== CLIENTS TAB (Softr-synced) ====================
         async function loadClients() {
             try {
                 const response = await fetch(`${API_URL}/clients`);
                 if (!response.ok) throw new Error(`API Error: ${response.status}`);
                 clientsData = await response.json();
+                if (!staffData) await loadStaff();
                 renderClientsTab();
             } catch (error) {
                 document.getElementById('tab-clients').innerHTML = `<div class="error-banner"><strong>Error:</strong> ${error.message}</div>`;
@@ -3485,59 +3497,141 @@
             const role = getUserRole();
             const clients = clientsData?.clients || [];
             const canEdit = role.canEditClients;
+            const active = clients.filter(c => c.status === 'Active');
 
-            let tableRows = clients.map(c => `
+            let tableRows = clients.map(c => {
+                const progress = Number(c.projectProgress) || 0;
+                const progressClass = progress > 75 ? 'progress-green' : progress > 40 ? 'progress-yellow' : '';
+                return `
                 <tr>
-                    <td><strong>${c.name || '-'}</strong></td>
+                    <td><strong>${c.name || '-'}</strong><div style="font-size:10px;color:#666;">${c.companyName || ''}</div></td>
                     <td><span class="status-pill ${c.status === 'Active' ? 'status-approved' : c.status === 'Prospect' ? 'status-submitted' : 'status-draft'}">${c.status || '-'}</span></td>
                     <td>${c.projectType || '-'}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <div style="flex:1;background:#333;border-radius:3px;height:6px;min-width:50px;"><div style="height:100%;border-radius:3px;width:${progress}%;background:${progress > 75 ? '#4CAF50' : progress > 40 ? '#FF9800' : '#C9A227'};"></div></div>
+                            <span style="font-size:11px;color:#888;">${progress}%</span>
+                        </div>
+                    </td>
+                    <td><span class="phase-tag">${c.projectTracker || '-'}</span></td>
+                    <td style="font-size:11px;">${c.projectDesigner || '-'}</td>
+                    <td style="font-size:11px;">${c.projectManager || '-'}</td>
                     <td>${c.email || '-'}</td>
-                    <td>${c.phone || '-'}</td>
                     <td>${canEdit ? `<button class="action-btn small" onclick="openEditClientModal('${c.id}')">✏️ Edit</button>` : '-'}</td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
 
             document.getElementById('tab-clients').innerHTML = `
                 <div class="header">
-                    <div class="header-left"><h1>👥 Client Portal</h1><span class="badge user-badge">${clients.length} clients</span></div>
+                    <div class="header-left"><h1>👥 Client Portal</h1><span class="badge user-badge">${clients.length} clients • synced with Softr</span></div>
                     <div class="header-actions"><button class="btn" onclick="clientsData=null;loadClients()">🔄 Refresh</button></div>
                 </div>
                 <div class="summary-cards">
-                    <div class="card"><div class="card-label">Active Clients</div><div class="card-value green">${clients.filter(c => c.status === 'Active').length}</div></div>
-                    <div class="card"><div class="card-label">Prospects</div><div class="card-value gold">${clients.filter(c => c.status === 'Prospect').length}</div></div>
-                    <div class="card"><div class="card-label">Total</div><div class="card-value blue">${clients.length}</div></div>
+                    <div class="card"><div class="card-label">Active Projects</div><div class="card-value green">${active.length}</div></div>
+                    <div class="card"><div class="card-label">Total Clients</div><div class="card-value gold">${clients.length}</div></div>
+                    <div class="card"><div class="card-label">Avg Progress</div><div class="card-value blue">${active.length > 0 ? Math.round(active.reduce((s,c) => s + (Number(c.projectProgress)||0), 0) / active.length) : 0}%</div></div>
                 </div>
                 ${clients.length > 0 ? `<div style="overflow-x:auto;">
                     <table class="assessment-table">
-                        <thead><tr><th>Client</th><th>Status</th><th>Type</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Client</th><th>Status</th><th>Type</th><th>Progress</th><th>Phase</th><th>Designer</th><th>PM</th><th>Email</th><th>Actions</th></tr></thead>
                         <tbody>${tableRows}</tbody>
                     </table>
                 </div>` : '<div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">No Clients</div></div>'}`;
         }
 
         function openEditClientModal(clientId) {
-            const client = clientsData?.clients?.find(c => c.id === clientId);
-            if (!client) return;
+            const c = clientsData?.clients?.find(cl => cl.id === clientId);
+            if (!c) return;
 
             const html = `<div class="modal-overlay active" id="editClientModal" onclick="if(event.target===this)this.remove()">
-                <div class="modal">
-                    <div class="modal-header"><h2 class="modal-title">✏️ Edit Client</h2><button class="modal-close" onclick="document.getElementById('editClientModal').remove()">&times;</button></div>
-                    <div class="form-group"><label class="form-label">Client Name</label><input type="text" class="form-input" id="editClientName" value="${client.name || ''}"></div>
+                <div class="modal wide" style="max-height:90vh;overflow-y:auto;">
+                    <div class="modal-header"><h2 class="modal-title">✏️ Edit Client — ${c.name}</h2><button class="modal-close" onclick="document.getElementById('editClientModal').remove()">&times;</button></div>
+
+                    <div class="form-section-title">Client Info</div>
                     <div class="form-row">
-                        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="editClientStatus"><option ${client.status==='Active'?'selected':''}>Active</option><option ${client.status==='Prospect'?'selected':''}>Prospect</option><option ${client.status==='Inactive'?'selected':''}>Inactive</option><option ${client.status==='Archived'?'selected':''}>Archived</option></select></div>
-                        <div class="form-group"><label class="form-label">Project Type</label><select class="form-select" id="editClientType"><option value="">-- Select --</option><option ${client.projectType==='Small Residential'?'selected':''}>Small Residential</option><option ${client.projectType==='Medium/Large Residential'?'selected':''}>Medium/Large Residential</option><option ${client.projectType==='Commercial / Retail'?'selected':''}>Commercial / Retail</option><option ${client.projectType==='TFO / Industrial / Special'?'selected':''}>TFO / Industrial / Special</option></select></div>
+                        <div class="form-group"><label class="form-label">Client Name</label><input type="text" class="form-input" id="ecName" value="${(c.name||'').replace(/"/g,'&quot;')}"></div>
+                        <div class="form-group"><label class="form-label">Company</label><input type="text" class="form-input" id="ecCompany" value="${(c.companyName||'').replace(/"/g,'&quot;')}"></div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="editClientEmail" value="${client.email || ''}"></div>
-                        <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" id="editClientPhone" value="${client.phone || ''}"></div>
+                        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="ecEmail" value="${c.email||''}"></div>
+                        <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" id="ecPhone" value="${c.phone||''}"></div>
                     </div>
-                    <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="editClientNotes">${client.notes || ''}</textarea></div>
-                    <button class="form-submit" id="editClientBtn" onclick="saveClient('${clientId}')">💾 Save Changes</button>
-                    <div class="form-success" id="editClientSuccess">✅ Client updated!</div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Address</label><input type="text" class="form-input" id="ecAddress" value="${(c.address||'').replace(/"/g,'&quot;')}"></div>
+                        <div class="form-group"><label class="form-label">County</label><input type="text" class="form-input" id="ecCounty" value="${(c.county||'').replace(/"/g,'&quot;')}"></div>
+                    </div>
+
+                    <div class="form-section-title">Project Info (visible on Softr)</div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="ecStatus"><option ${c.status==='Active'?'selected':''}>Active</option><option ${c.status==='Prospect'?'selected':''}>Prospect</option><option ${c.status==='Inactive'?'selected':''}>Inactive</option><option ${c.status==='Complete'?'selected':''}>Complete</option></select></div>
+                        <div class="form-group"><label class="form-label">Project Type</label><select class="form-select" id="ecType"><option value="">-- Select --</option><option ${c.projectType==='New Build'?'selected':''}>New Build</option><option ${c.projectType==='Addition'?'selected':''}>Addition</option><option ${c.projectType==='Renovation'?'selected':''}>Renovation</option><option ${c.projectType==='Commercial'?'selected':''}>Commercial</option><option ${c.projectType==='Site Survey'?'selected':''}>Site Survey</option></select></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Project Description</label><textarea class="form-textarea" id="ecDesc">${c.projectDescription||''}</textarea></div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Project Progress (%)</label><input type="number" class="form-input" id="ecProgress" min="0" max="100" value="${c.projectProgress||0}"></div>
+                        <div class="form-group"><label class="form-label">Project Tracker (Phase)</label><select class="form-select" id="ecTracker"><option value="">-- Select --</option><option ${c.projectTracker==='Concept'?'selected':''}>Concept</option><option ${c.projectTracker==='Design'?'selected':''}>Design</option><option ${c.projectTracker==='Markups'?'selected':''}>Markups</option><option ${c.projectTracker==='Revisions'?'selected':''}>Revisions</option><option ${c.projectTracker==='Permitting'?'selected':''}>Permitting</option><option ${c.projectTracker==='Construction Docs'?'selected':''}>Construction Docs</option><option ${c.projectTracker==='Final'?'selected':''}>Final</option><option ${c.projectTracker==='Complete'?'selected':''}>Complete</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Services Requested</label><input type="text" class="form-input" id="ecServices" value="${(c.servicesRequested||'').replace(/"/g,'&quot;')}"></div>
+                        <div class="form-group"><label class="form-label">Target Budget</label><input type="text" class="form-input" id="ecBudget" value="${(c.targetBudget||'').replace(/"/g,'&quot;')}"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Start Date</label><input type="date" class="form-input" id="ecStart" value="${c.startDate||''}"></div>
+                        <div class="form-group"><label class="form-label">Target Completion</label><input type="date" class="form-input" id="ecCompletion" value="${c.targetCompletionDate||''}"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Design Review Date</label><input type="date" class="form-input" id="ecDesignReview" value="${c.designReviewDate||''}"></div>
+                        <div class="form-group"><label class="form-label">Expected Approval Date</label><input type="date" class="form-input" id="ecApprovalDate" value="${c.expectedApprovalDate||''}"></div>
+                    </div>
+
+                    <div class="form-section-title">Team (visible on Softr)</div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Project Manager</label><select class="form-select" id="ecPM">${buildStaffOptions(c.projectManager, 'pm')}</select></div>
+                        <div class="form-group"><label class="form-label">PM Email</label><input type="email" class="form-input" id="ecPMEmail" value="${c.projectManagerEmail||''}"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Project Designer</label><select class="form-select" id="ecDesigner">${buildStaffOptions(c.projectDesigner, 'designer')}</select></div>
+                        <div class="form-group"><label class="form-label">Designer Email</label><input type="email" class="form-input" id="ecDesignerEmail" value="${c.projectDesignerEmail||''}"></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Additional Team</label><input type="text" class="form-input" id="ecAdditionalTeam" value="${(c.additionalTeam||'').replace(/"/g,'&quot;')}"></div>
+
+                    <div class="form-section-title">Payments</div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Deposit Status</label><select class="form-select" id="ecDeposit"><option value="">-- Select --</option><option ${c.depositStatus==='Deposit Payment Complete'?'selected':''}>Deposit Payment Complete</option><option ${c.depositStatus==='Pending'?'selected':''}>Pending</option><option ${c.depositStatus==='Not Required'?'selected':''}>Not Required</option></select></div>
+                        <div class="form-group"><label class="form-label">Proposal Status</label><select class="form-select" id="ecProposal"><option value="">-- Select --</option><option ${c.proposalStatus==='Accepted'?'selected':''}>Accepted</option><option ${c.proposalStatus==='Pending'?'selected':''}>Pending</option><option ${c.proposalStatus==='Declined'?'selected':''}>Declined</option></select></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Balance Remaining</label><input type="text" class="form-input" id="ecBalance" value="${(c.totalBalanceRemaining||'').replace(/"/g,'&quot;')}"></div>
+
+                    <div class="form-section-title">Latest Update & Client Communication</div>
+                    <div class="form-group"><label class="form-label">Latest Update (shown on Softr)</label><textarea class="form-textarea" id="ecUpdate" placeholder="This appears in Project Updates on the client portal">${c.latestUpdate||''}</textarea></div>
+                    <div class="form-group">
+                        <label class="form-label">📧 Update Customer by Email</label>
+                        <select class="form-select" id="ecEmailTrigger" style="border-color:#C9A227;">
+                            <option value="No Email" ${c.updateCustomerByEmail==='No Email'||!c.updateCustomerByEmail?'selected':''}>No Email</option>
+                            <option value="Send Portal Update">Send Portal Update</option>
+                            <option value="Send Design Update">Send Design Update</option>
+                            <option value="Send Permit Update">Send Permit Update</option>
+                        </select>
+                        <div style="font-size:11px;color:#888;margin-top:4px;">Selecting an option triggers the Notion automation to email the client.</div>
+                    </div>
+
+                    <button class="form-submit" id="editClientBtn" onclick="saveClient('${c.id}')">💾 Save & Sync to Softr</button>
+                    <div class="form-success" id="editClientSuccess">✅ Client updated! Changes synced to Softr portal.</div>
                     <div class="form-error" id="editClientError">❌ Error updating client.</div>
                 </div>
             </div>`;
             document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function buildStaffOptions(currentValue, type) {
+            const staff = staffData?.staff || [];
+            const current = (currentValue || '').split('(')[0].trim();
+            let options = '<option value="">-- Select --</option>';
+            const names = [...new Set(staff.map(s => s.name).filter(Boolean))];
+            names.forEach(name => {
+                options += `<option value="${name}" ${current === name ? 'selected' : ''}>${name}</option>`;
+            });
+            return options;
         }
 
         async function saveClient(clientId) {
@@ -3547,13 +3641,35 @@
                 const response = await fetch(`${API_URL}/clients/${clientId}`, {
                     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        name: document.getElementById('editClientName').value,
-                        status: document.getElementById('editClientStatus').value,
-                        projectType: document.getElementById('editClientType').value,
-                        email: document.getElementById('editClientEmail').value,
-                        phone: document.getElementById('editClientPhone').value,
-                        notes: document.getElementById('editClientNotes').value,
-                        lastContact: new Date().toISOString().split('T')[0]
+                        name: document.getElementById('ecName').value,
+                        companyName: document.getElementById('ecCompany').value,
+                        email: document.getElementById('ecEmail').value,
+                        phone: document.getElementById('ecPhone').value,
+                        address: document.getElementById('ecAddress').value,
+                        county: document.getElementById('ecCounty').value,
+                        status: document.getElementById('ecStatus').value,
+                        projectType: document.getElementById('ecType').value,
+                        projectDescription: document.getElementById('ecDesc').value,
+                        projectProgress: document.getElementById('ecProgress').value,
+                        projectTracker: document.getElementById('ecTracker').value,
+                        servicesRequested: document.getElementById('ecServices').value,
+                        targetBudget: document.getElementById('ecBudget').value,
+                        startDate: document.getElementById('ecStart').value || undefined,
+                        targetCompletionDate: document.getElementById('ecCompletion').value || undefined,
+                        designReviewDate: document.getElementById('ecDesignReview').value || undefined,
+                        expectedApprovalDate: document.getElementById('ecApprovalDate').value || undefined,
+                        projectManager: document.getElementById('ecPM').value,
+                        projectManagerEmail: document.getElementById('ecPMEmail').value,
+                        projectDesigner: document.getElementById('ecDesigner').value,
+                        projectDesignerEmail: document.getElementById('ecDesignerEmail').value,
+                        additionalTeam: document.getElementById('ecAdditionalTeam').value,
+                        depositStatus: document.getElementById('ecDeposit').value || undefined,
+                        proposalStatus: document.getElementById('ecProposal').value || undefined,
+                        totalBalanceRemaining: document.getElementById('ecBalance').value,
+                        latestUpdate: document.getElementById('ecUpdate').value,
+                        updateCustomerByEmail: document.getElementById('ecEmailTrigger').value,
+                        devProjectManager: document.getElementById('ecPM').value,
+                        devProjectDesigner: document.getElementById('ecDesigner').value
                     })
                 });
                 const result = await response.json();
@@ -3564,7 +3680,7 @@
                 } else throw new Error('Failed');
             } catch (e) {
                 document.getElementById('editClientError').style.display = 'block';
-                btn.disabled = false; btn.textContent = '💾 Save Changes';
+                btn.disabled = false; btn.textContent = '💾 Save & Sync to Softr';
             }
         }
 
