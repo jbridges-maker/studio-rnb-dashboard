@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studio RNB - Time Dashboard</title>
+    <title>Studio RNB - Operations Hub</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
@@ -13,27 +13,74 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #191919;
             color: #fff;
-            padding: 24px;
             min-height: 100vh;
         }
-        
-        /* Modal Styles */
+
+        /* ==================== TAB NAVIGATION ==================== */
+        .tab-nav {
+            display: flex;
+            background: #1e1e1e;
+            border-bottom: 1px solid #333;
+            padding: 0 24px;
+            overflow-x: auto;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #888;
+            padding: 14px 20px;
+            font-size: 13px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .tab-btn:hover { color: #ccc; }
+        .tab-btn.active { color: #C9A227; border-bottom-color: #C9A227; }
+
+        .tab-badge {
+            background: #f44336;
+            color: #fff;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .tab-badge.gold { background: #C9A227; color: #000; }
+
+        .tab-content {
+            display: none;
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .tab-content.active { display: block; }
+
+        /* ==================== MODALS ==================== */
         .modal-overlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.8);
             z-index: 1000;
             align-items: center;
             justify-content: center;
         }
         
-        .modal-overlay.active {
-            display: flex;
-        }
+        .modal-overlay.active { display: flex; }
         
         .modal {
             background: #252525;
@@ -41,10 +88,12 @@
             border: 1px solid #333;
             padding: 24px;
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             max-height: 90vh;
             overflow-y: auto;
         }
+
+        .modal.wide { max-width: 700px; }
         
         .modal-header {
             display: flex;
@@ -53,158 +102,107 @@
             margin-bottom: 20px;
         }
         
-        .modal-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #C9A227;
-        }
+        .modal-title { font-size: 18px; font-weight: 600; color: #C9A227; }
         
         .modal-close {
-            background: none;
-            border: none;
-            color: #888;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0;
-            line-height: 1;
+            background: none; border: none; color: #888;
+            font-size: 24px; cursor: pointer; padding: 0; line-height: 1;
         }
         
-        .modal-close:hover {
-            color: #fff;
-        }
-        
-        .form-group {
-            margin-bottom: 16px;
-        }
+        .modal-close:hover { color: #fff; }
+
+        /* ==================== FORMS ==================== */
+        .form-group { margin-bottom: 16px; }
         
         .form-label {
-            display: block;
-            font-size: 12px;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
+            display: block; font-size: 12px; color: #888;
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
         }
+
+        .form-section-title {
+            font-size: 13px; font-weight: 600; color: #C9A227;
+            border-bottom: 1px solid #333; padding-bottom: 8px;
+            margin: 20px 0 16px; text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .form-section-title:first-of-type { margin-top: 0; }
         
         .form-input, .form-select, .form-textarea {
-            width: 100%;
-            padding: 12px;
-            background: #191919;
-            border: 1px solid #444;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 14px;
+            width: 100%; padding: 12px;
+            background: #191919; border: 1px solid #444;
+            border-radius: 8px; color: #fff; font-size: 14px;
         }
         
         .form-input:focus, .form-select:focus, .form-textarea:focus {
-            outline: none;
-            border-color: #C9A227;
+            outline: none; border-color: #C9A227;
         }
         
-        .form-select {
-            cursor: pointer;
-        }
-        
-        .form-select option {
-            background: #191919;
-            color: #fff;
-        }
-        
-        .form-textarea {
-            min-height: 80px;
-            resize: vertical;
-        }
-        
-        .form-row {
+        .form-select { cursor: pointer; }
+        .form-select option { background: #191919; color: #fff; }
+        .form-textarea { min-height: 80px; resize: vertical; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+        .form-team-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 100px;
             gap: 12px;
+            align-items: end;
         }
         
         .form-submit {
-            width: 100%;
-            padding: 14px;
-            background: #C9A227;
-            border: none;
-            border-radius: 8px;
-            color: #000;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: background 0.2s;
+            width: 100%; padding: 14px;
+            background: #C9A227; border: none; border-radius: 8px;
+            color: #000; font-size: 14px; font-weight: 600;
+            cursor: pointer; margin-top: 8px; transition: background 0.2s;
         }
         
-        .form-submit:hover {
-            background: #b8922a;
-        }
-        
-        .form-submit:disabled {
-            background: #666;
-            cursor: not-allowed;
-        }
+        .form-submit:hover { background: #b8922a; }
+        .form-submit:disabled { background: #666; cursor: not-allowed; }
+
+        .form-submit.approve { background: #4CAF50; }
+        .form-submit.approve:hover { background: #43a047; }
+        .form-submit.revise { background: #FF9800; }
+        .form-submit.revise:hover { background: #e68a00; }
+        .form-submit.decline { background: #f44336; }
+        .form-submit.decline:hover { background: #d32f2f; }
         
         .form-success {
-            background: rgba(76, 175, 80, 0.1);
-            border: 1px solid rgba(76, 175, 80, 0.3);
-            border-radius: 8px;
-            padding: 12px;
-            color: #4CAF50;
-            text-align: center;
-            margin-top: 12px;
-            display: none;
+            background: rgba(76,175,80,0.1); border: 1px solid rgba(76,175,80,0.3);
+            border-radius: 8px; padding: 12px; color: #4CAF50;
+            text-align: center; margin-top: 12px; display: none;
         }
         
         .form-error {
-            background: rgba(244, 67, 54, 0.1);
-            border: 1px solid rgba(244, 67, 54, 0.3);
-            border-radius: 8px;
-            padding: 12px;
-            color: #f44336;
-            text-align: center;
-            margin-top: 12px;
-            display: none;
+            background: rgba(244,67,54,0.1); border: 1px solid rgba(244,67,54,0.3);
+            border-radius: 8px; padding: 12px; color: #f44336;
+            text-align: center; margin-top: 12px; display: none;
         }
-        
-        .btn-log-hours {
-            background: #4CAF50;
-            border-color: #4CAF50;
-        }
-        
-        .btn-log-hours:hover {
-            background: #43a047;
-        }
-        
-        .dashboard { max-width: 1400px; margin: 0 auto; }
-        
+
+        .btn-log-hours { background: #4CAF50; border-color: #4CAF50; }
+        .btn-log-hours:hover { background: #43a047; }
+
+        /* ==================== COMMON LAYOUT ==================== */
         .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 24px; flex-wrap: wrap; gap: 16px;
         }
         
         .header-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .header h1 { font-size: 24px; font-weight: 600; color: #C9A227; }
         
         .badge {
-            font-size: 11px;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-weight: 500;
+            font-size: 11px; padding: 4px 10px;
+            border-radius: 12px; font-weight: 500;
         }
         
-        .user-badge { background: rgba(201, 162, 39, 0.2); color: #C9A227; }
-        .live-badge { background: rgba(76, 175, 80, 0.2); color: #4CAF50; display: flex; align-items: center; gap: 6px; }
-        .leadership-badge { background: rgba(139, 92, 246, 0.2); color: #8B5CF6; }
+        .user-badge { background: rgba(201,162,39,0.2); color: #C9A227; }
+        .live-badge { background: rgba(76,175,80,0.2); color: #4CAF50; display: flex; align-items: center; gap: 6px; }
+        .leadership-badge { background: rgba(139,92,246,0.2); color: #8B5CF6; }
         
         .live-dot {
-            width: 6px; height: 6px;
-            background: #4CAF50;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
+            width: 6px; height: 6px; background: #4CAF50;
+            border-radius: 50%; animation: pulse 2s infinite;
         }
         
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
@@ -212,17 +210,10 @@
         .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
         
         .btn {
-            background: #333;
-            border: 1px solid #444;
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
+            background: #333; border: 1px solid #444; color: #fff;
+            padding: 8px 16px; border-radius: 8px; cursor: pointer;
+            font-size: 13px; display: flex; align-items: center;
+            gap: 6px; transition: all 0.2s;
         }
         
         .btn:hover { background: #444; }
@@ -232,52 +223,36 @@
         .loading { text-align: center; padding: 60px; color: #888; }
         
         .loading-spinner {
-            width: 40px; height: 40px;
-            border: 3px solid #333;
-            border-top-color: #C9A227;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
+            width: 40px; height: 40px; border: 3px solid #333;
+            border-top-color: #C9A227; border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 16px;
         }
         
         @keyframes spin { to { transform: rotate(360deg); } }
-        
-        /* Alert Banner */
+
+        /* ==================== ALERTS ==================== */
         .alert-banner {
-            background: rgba(244, 67, 54, 0.1);
-            border: 1px solid rgba(244, 67, 54, 0.3);
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            background: rgba(244,67,54,0.1); border: 1px solid rgba(244,67,54,0.3);
+            border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;
+            display: flex; align-items: center; gap: 12px;
         }
         
-        .alert-banner.warning {
-            background: rgba(255, 152, 0, 0.1);
-            border-color: rgba(255, 152, 0, 0.3);
-        }
-        
+        .alert-banner.warning { background: rgba(255,152,0,0.1); border-color: rgba(255,152,0,0.3); }
         .alert-icon { font-size: 24px; }
         .alert-content { flex: 1; }
         .alert-title { font-weight: 600; color: #f44336; margin-bottom: 4px; }
         .alert-banner.warning .alert-title { color: #FF9800; }
         .alert-text { font-size: 13px; color: #999; }
-        
-        /* Summary Cards */
+
+        /* ==================== CARDS ==================== */
         .summary-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px; margin-bottom: 24px;
         }
         
         .card {
-            background: #252525;
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #333;
+            background: #252525; border-radius: 12px;
+            padding: 20px; border: 1px solid #333;
         }
         
         .card-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
@@ -292,113 +267,75 @@
         .card-trend { font-size: 11px; margin-top: 8px; }
         .card-trend.up { color: #4CAF50; }
         .card-trend.down { color: #f44336; }
-        
-        /* Budget Alerts Section */
+
+        /* ==================== BUDGET ALERTS ==================== */
         .budget-alerts {
-            background: #252525;
-            border-radius: 12px;
-            border: 1px solid #333;
-            padding: 20px;
-            margin-bottom: 24px;
+            background: #252525; border-radius: 12px;
+            border: 1px solid #333; padding: 20px; margin-bottom: 24px;
         }
         
-        .section-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .section-title {
+            font-size: 14px; font-weight: 600; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 8px;
+        }
         
         .budget-alert-row {
-            display: grid;
-            grid-template-columns: 1fr 100px 120px 100px;
-            align-items: center;
-            gap: 16px;
-            padding: 12px 0;
-            border-bottom: 1px solid #333;
-            font-size: 13px;
+            display: grid; grid-template-columns: 1fr 100px 120px 100px;
+            align-items: center; gap: 16px; padding: 12px 0;
+            border-bottom: 1px solid #333; font-size: 13px;
         }
         
         .budget-alert-row:last-child { border-bottom: none; }
-        
         .budget-alert-name { font-weight: 500; }
         .budget-alert-phase { color: #888; }
-        
-        .budget-bar {
-            background: #333;
-            border-radius: 4px;
-            height: 6px;
-            overflow: hidden;
-        }
-        
+        .budget-bar { background: #333; border-radius: 4px; height: 6px; overflow: hidden; }
         .budget-bar-fill { height: 100%; border-radius: 4px; }
         .budget-bar-fill.warning { background: #FF9800; }
         .budget-bar-fill.danger { background: #f44336; }
-        
         .budget-pct { text-align: right; font-weight: 600; }
         .budget-pct.warning { color: #FF9800; }
         .budget-pct.danger { color: #f44336; }
-        
-        /* Charts Grid */
+
+        /* ==================== CHARTS ==================== */
         .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-            margin-bottom: 24px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px; margin-bottom: 24px;
         }
         
         .chart-card {
-            background: #252525;
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #333;
+            background: #252525; border-radius: 12px;
+            padding: 20px; border: 1px solid #333;
         }
         
         .chart-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
         .chart-container { position: relative; height: 200px; }
         .chart-container.tall { height: 300px; }
-        
-        /* Timeline / Gantt */
+
+        /* ==================== TIMELINE ==================== */
         .timeline-section {
-            background: #252525;
-            border-radius: 12px;
-            border: 1px solid #333;
-            padding: 20px;
-            margin-bottom: 24px;
-            overflow-x: auto;
+            background: #252525; border-radius: 12px; border: 1px solid #333;
+            padding: 20px; margin-bottom: 24px; overflow-x: auto;
         }
         
         .timeline-container { min-width: 800px; }
-        
-        .timeline-header {
-            display: flex;
-            border-bottom: 1px solid #444;
-            padding-bottom: 8px;
-            margin-bottom: 12px;
-        }
-        
+        .timeline-header { display: flex; border-bottom: 1px solid #444; padding-bottom: 8px; margin-bottom: 12px; }
         .timeline-label { width: 200px; font-size: 11px; color: #888; text-transform: uppercase; }
         .timeline-months { flex: 1; display: flex; }
         .timeline-month { flex: 1; font-size: 11px; color: #888; text-align: center; }
         
         .timeline-row {
-            display: flex;
-            align-items: center;
-            padding: 8px 0;
+            display: flex; align-items: center; padding: 8px 0;
             border-bottom: 1px solid #2a2a2a;
         }
         
         .timeline-row:last-child { border-bottom: none; }
         .timeline-project { width: 200px; font-size: 13px; font-weight: 500; }
-        
         .timeline-bar-container { flex: 1; position: relative; height: 24px; }
         
         .timeline-bar {
-            position: absolute;
-            height: 20px;
-            border-radius: 4px;
-            top: 2px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: 500;
-            color: #fff;
+            position: absolute; height: 20px; border-radius: 4px; top: 2px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 500; color: #fff;
         }
         
         .timeline-bar.sd { background: #1E3A5F; }
@@ -406,40 +343,26 @@
         .timeline-bar.cd { background: #1B5E20; }
         .timeline-bar.intake { background: #4A148C; }
         .timeline-bar.permitting { background: #E65100; }
-        
-        /* Phase Cards */
+
+        /* ==================== PHASE CARDS ==================== */
         .phases-section { margin-bottom: 24px; }
         
         .phase-card {
-            background: #252525;
-            border-radius: 12px;
-            border: 1px solid #333;
-            margin-bottom: 12px;
-            overflow: hidden;
+            background: #252525; border-radius: 12px;
+            border: 1px solid #333; margin-bottom: 12px; overflow: hidden;
         }
         
         .phase-header {
-            padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            border-bottom: 1px solid transparent;
+            padding: 16px 20px; display: flex; justify-content: space-between;
+            align-items: center; cursor: pointer; border-bottom: 1px solid transparent;
         }
         
         .phase-header:hover { background: rgba(255,255,255,0.02); }
         .phase-card:not(.collapsed) .phase-header { border-bottom-color: #333; }
-        
         .phase-info { display: flex; align-items: center; gap: 12px; }
         .phase-name { font-size: 15px; font-weight: 600; }
         
-        .phase-tag {
-            font-size: 10px;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-weight: 500;
-        }
-        
+        .phase-tag { font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 500; }
         .phase-sd { background: #1E3A5F; color: #64B5F6; }
         .phase-dd { background: #3E2723; color: #FFAB91; }
         .phase-cd { background: #1B5E20; color: #81C784; }
@@ -464,108 +387,502 @@
         .progress-red { background: linear-gradient(90deg, #f44336, #E57373); }
         
         .phase-progress-text { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-bottom: 16px; }
-        
         .tasks-header { font-size: 12px; color: #888; margin-bottom: 10px; }
         
         .task-row {
-            display: grid;
-            grid-template-columns: 20px 1fr 70px 70px 80px;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 0;
-            border-bottom: 1px solid #2a2a2a;
-            font-size: 12px;
+            display: grid; grid-template-columns: 20px 1fr 70px 70px 80px;
+            align-items: center; gap: 10px; padding: 8px 0;
+            border-bottom: 1px solid #2a2a2a; font-size: 12px;
         }
         
         .task-row:last-child { border-bottom: none; }
-        
-        .task-checkbox {
-            width: 16px; height: 16px;
-            border-radius: 3px;
-            border: 2px solid #444;
-        }
-        
+        .task-checkbox { width: 16px; height: 16px; border-radius: 3px; border: 2px solid #444; }
         .task-checkbox.done { background: #4CAF50; border-color: #4CAF50; }
         .task-checkbox.in-progress { border-color: #FF9800; background: rgba(255,152,0,0.2); }
-        
         .task-name { color: #ddd; }
         .task-name.done { text-decoration: line-through; color: #666; }
         .task-name.overdue { color: #f44336; }
         .task-name.due-soon { color: #FF9800; }
-        
         .task-effort { color: #888; text-align: right; }
         .task-due { font-size: 11px; color: #888; }
         .task-due.overdue { color: #f44336; font-weight: 600; }
         .task-due.due-soon { color: #FF9800; }
         
-        .task-status {
-            font-size: 9px;
-            padding: 2px 6px;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: 500;
-        }
-        
+        .task-status { font-size: 9px; padding: 2px 6px; border-radius: 8px; text-align: center; font-weight: 500; }
         .status-done { background: rgba(76,175,80,0.2); color: #4CAF50; }
         .status-in-progress { background: rgba(255,152,0,0.2); color: #FF9800; }
         .status-not-started { background: rgba(156,163,175,0.2); color: #9CA3AF; }
         .status-in-review { background: rgba(139,92,246,0.2); color: #8B5CF6; }
         
         .no-tasks { color: #555; font-size: 12px; font-style: italic; padding: 8px 0; }
-        
-        /* Other Tasks Section */
-        .other-tasks {
-            background: #252525;
-            border-radius: 12px;
-            border: 1px solid #333;
-            padding: 20px;
-            margin-bottom: 24px;
-        }
-        
+        .other-tasks { background: #252525; border-radius: 12px; border: 1px solid #333; padding: 20px; margin-bottom: 24px; }
         .last-updated { font-size: 11px; color: #555; text-align: right; margin-top: 16px; }
-        
-        .error-banner {
-            background: rgba(244,67,54,0.1);
-            border: 1px solid rgba(244,67,54,0.3);
-            border-radius: 12px;
-            padding: 20px;
-            color: #f44336;
-            margin-bottom: 24px;
-        }
-        
+        .error-banner { background: rgba(244,67,54,0.1); border: 1px solid rgba(244,67,54,0.3); border-radius: 12px; padding: 20px; color: #f44336; margin-bottom: 24px; }
         .no-data { text-align: center; padding: 40px; color: #666; }
-        
-        /* Responsive */
+
+        /* ==================== ASSESSMENT TABLE ==================== */
+        .assessment-table {
+            width: 100%; border-collapse: collapse; margin-top: 16px;
+        }
+
+        .assessment-table th {
+            text-align: left; font-size: 11px; color: #888;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            padding: 10px 12px; border-bottom: 1px solid #444;
+        }
+
+        .assessment-table td {
+            padding: 14px 12px; border-bottom: 1px solid #2a2a2a;
+            font-size: 13px; vertical-align: middle;
+        }
+
+        .assessment-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .status-pill {
+            display: inline-block; font-size: 11px; padding: 3px 10px;
+            border-radius: 12px; font-weight: 500;
+        }
+
+        .status-draft { background: rgba(156,163,175,0.2); color: #9CA3AF; }
+        .status-submitted { background: rgba(100,181,246,0.2); color: #64B5F6; }
+        .status-approved { background: rgba(76,175,80,0.2); color: #4CAF50; }
+        .status-needs-revision { background: rgba(255,152,0,0.2); color: #FF9800; }
+        .status-declined { background: rgba(244,67,54,0.2); color: #f44336; }
+        .status-kickoff-scheduled { background: rgba(139,92,246,0.2); color: #8B5CF6; }
+        .status-confirmed { background: rgba(76,175,80,0.2); color: #4CAF50; }
+        .status-adjustments-needed { background: rgba(255,152,0,0.2); color: #FF9800; }
+        .status-active { background: rgba(76,175,80,0.3); color: #81C784; }
+
+        .risk-low { color: #4CAF50; }
+        .risk-medium { color: #FF9800; }
+        .risk-high { color: #f44336; }
+
+        .go-badge { background: rgba(76,175,80,0.2); color: #4CAF50; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+        .nogo-badge { background: rgba(244,67,54,0.2); color: #f44336; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+
+        .action-btn {
+            background: none; border: 1px solid #444; color: #ccc;
+            padding: 6px 12px; border-radius: 6px; cursor: pointer;
+            font-size: 12px; transition: all 0.2s;
+        }
+
+        .action-btn:hover { background: #333; border-color: #C9A227; color: #C9A227; }
+        .action-btn.small { padding: 4px 8px; font-size: 11px; }
+
+        /* Approval detail card */
+        .approval-detail {
+            background: #252525; border-radius: 12px; border: 1px solid #333;
+            padding: 24px; margin-bottom: 16px;
+        }
+
+        .approval-detail-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+        }
+
+        .approval-detail-title { font-size: 20px; font-weight: 600; }
+
+        .detail-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px; margin-bottom: 20px;
+        }
+
+        .detail-item {}
+        .detail-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .detail-value { font-size: 14px; font-weight: 500; }
+
+        .team-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px; margin-bottom: 20px;
+        }
+
+        .team-member-card {
+            background: #191919; border-radius: 8px; padding: 12px;
+            border: 1px solid #333;
+        }
+
+        .team-member-role { font-size: 11px; color: #888; text-transform: uppercase; }
+        .team-member-name { font-size: 14px; font-weight: 500; margin-top: 2px; }
+        .team-member-hours { font-size: 13px; color: #C9A227; margin-top: 4px; }
+
+        .approval-actions {
+            display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap;
+        }
+
+        .approval-actions .btn { flex: 1; justify-content: center; min-width: 120px; }
+
+        .btn-approve { background: #4CAF50; border-color: #4CAF50; color: #fff; }
+        .btn-approve:hover { background: #43a047; }
+        .btn-revise { background: #FF9800; border-color: #FF9800; color: #fff; }
+        .btn-revise:hover { background: #e68a00; }
+        .btn-decline { background: #f44336; border-color: #f44336; color: #fff; }
+        .btn-decline:hover { background: #d32f2f; }
+
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: #666;
+        }
+
+        .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-state-title { font-size: 18px; font-weight: 600; color: #888; margin-bottom: 8px; }
+        .empty-state-text { font-size: 14px; }
+
+        /* ==================== RESPONSIVE ==================== */
         @media (max-width: 768px) {
-            body { padding: 16px; }
+            .tab-nav { padding: 0 12px; }
+            .tab-btn { padding: 12px 14px; font-size: 12px; }
+            .tab-content { padding: 16px; }
             .header { flex-direction: column; align-items: flex-start; }
             .summary-cards { grid-template-columns: repeat(2, 1fr); }
             .budget-alert-row { grid-template-columns: 1fr 80px; }
             .budget-alert-row > *:nth-child(3) { display: none; }
             .task-row { grid-template-columns: 20px 1fr 60px; }
             .task-due, .task-effort { display: none; }
+            .assessment-table { font-size: 12px; }
+            .detail-grid { grid-template-columns: repeat(2, 1fr); }
+            .form-row, .form-row-3 { grid-template-columns: 1fr; }
         }
         
-        /* Print / PDF styles */
         @media print {
             body { background: #fff; color: #000; }
             .card, .chart-card, .phase-card, .budget-alerts, .timeline-section, .other-tasks {
-                background: #fff;
-                border-color: #ddd;
+                background: #fff; border-color: #ddd;
             }
-            .btn { display: none; }
+            .btn, .tab-nav { display: none; }
         }
     </style>
 </head>
 <body>
-    <div class="dashboard" id="app">
+
+    <!-- TAB NAVIGATION -->
+    <nav class="tab-nav" id="tabNav">
+        <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+        <button class="tab-btn" data-tab="time" onclick="switchTab('time')">⏱️ Time</button>
+        <button class="tab-btn" data-tab="assessments" onclick="switchTab('assessments')">📋 Assessments</button>
+        <button class="tab-btn" data-tab="approvals" onclick="switchTab('approvals')">✅ Approvals <span class="tab-badge" id="approvalsBadge" style="display:none">0</span></button>
+    </nav>
+
+    <!-- TAB: DASHBOARD -->
+    <div class="tab-content active" id="tab-dashboard">
         <div class="loading">
             <div class="loading-spinner"></div>
             <p>Loading dashboard data...</p>
         </div>
     </div>
 
+    <!-- TAB: TIME -->
+    <div class="tab-content" id="tab-time">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading time data...</p>
+        </div>
+    </div>
+
+    <!-- TAB: ASSESSMENTS -->
+    <div class="tab-content" id="tab-assessments">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading assessments...</p>
+        </div>
+    </div>
+
+    <!-- TAB: APPROVALS -->
+    <div class="tab-content" id="tab-approvals">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading approvals...</p>
+        </div>
+    </div>
+
+    <!-- LOG HOURS MODAL -->
+    <div class="modal-overlay" id="logHoursModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">⏱️ Log Hours</h2>
+                <button class="modal-close" onclick="closeModal('logHoursModal')">&times;</button>
+            </div>
+            <form id="logHoursForm" onsubmit="submitLogHours(event)">
+                <div class="form-group">
+                    <label class="form-label">Select Phase *</label>
+                    <select class="form-select" id="phaseSelect" required>
+                        <option value="">-- Select a phase --</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Hours *</label>
+                        <input type="number" class="form-input" id="hoursInput" step="0.25" min="0.25" max="24" required placeholder="e.g. 4.5">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Week Ending *</label>
+                        <input type="date" class="form-input" id="weekEndingInput" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes (optional)</label>
+                    <textarea class="form-textarea" id="notesInput" placeholder="What did you work on?"></textarea>
+                </div>
+                <button type="submit" class="form-submit" id="logSubmitBtn">Submit Hours</button>
+                <div class="form-success" id="logFormSuccess">✅ Hours logged successfully!</div>
+                <div class="form-error" id="logFormError">❌ Error logging hours.</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SUBMIT ASSESSMENT MODAL -->
+    <div class="modal-overlay" id="assessmentModal">
+        <div class="modal wide">
+            <div class="modal-header">
+                <h2 class="modal-title">📋 Submit Assessment</h2>
+                <button class="modal-close" onclick="closeModal('assessmentModal')">&times;</button>
+            </div>
+            <form id="assessmentForm" onsubmit="submitAssessment(event)">
+                <div class="form-group">
+                    <label class="form-label">Client Name *</label>
+                    <input type="text" class="form-input" id="assessClientName" required placeholder="Enter client name">
+                </div>
+
+                <div class="form-section-title">Project Snapshot</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Project Type *</label>
+                        <select class="form-select" id="assessProjectType" required>
+                            <option value="">-- Select --</option>
+                            <option>Small Residential</option>
+                            <option>Medium/Large Residential</option>
+                            <option>Commercial / Retail</option>
+                            <option>TFO / Industrial / Special</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Jurisdiction *</label>
+                        <select class="form-select" id="assessJurisdiction" required>
+                            <option value="">-- Select --</option>
+                            <option>Local - Familiar</option>
+                            <option>Local - Unfamiliar</option>
+                            <option>Out of State</option>
+                            <option>High Regulation / Coastal</option>
+                            <option>Historic District / Overlay</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Expectation</label>
+                        <select class="form-select" id="assessDelivery">
+                            <option value="">-- Select --</option>
+                            <option>Standard</option>
+                            <option>Accelerated</option>
+                            <option>Fast-Track / Phased</option>
+                            <option>Unknown</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Schedule Urgency</label>
+                        <select class="form-select" id="assessUrgency">
+                            <option value="">-- Select --</option>
+                            <option>Low</option>
+                            <option>Medium</option>
+                            <option>High</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-section-title">Scorecard Outputs</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Risk Level *</label>
+                        <select class="form-select" id="assessRiskLevel" required>
+                            <option value="">-- Select --</option>
+                            <option>Low</option>
+                            <option>Medium</option>
+                            <option>High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Go Status *</label>
+                        <select class="form-select" id="assessGoStatus" required>
+                            <option value="">-- Select --</option>
+                            <option>Go</option>
+                            <option>No-Go</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Client Readiness</label>
+                        <select class="form-select" id="assessReadiness">
+                            <option value="">-- Select --</option>
+                            <option>Low</option>
+                            <option>Medium</option>
+                            <option>High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Complexity Level</label>
+                        <select class="form-select" id="assessComplexity">
+                            <option value="">-- Select --</option>
+                            <option>Low</option>
+                            <option>Medium</option>
+                            <option>High</option>
+                            <option>Critical</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-section-title">Package & Delivery</div>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label class="form-label">Package *</label>
+                        <select class="form-select" id="assessPackage" required>
+                            <option value="">-- Select --</option>
+                            <option>Small</option>
+                            <option>Medium</option>
+                            <option>Large</option>
+                            <option>Custom</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Lane</label>
+                        <select class="form-select" id="assessLane">
+                            <option value="">-- Select --</option>
+                            <option>Lane A (Packages)</option>
+                            <option>Lane B (Custom)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Delivery Window</label>
+                        <input type="text" class="form-input" id="assessDeliveryWindow" placeholder="e.g. 2-4 weeks">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Capacity Status</label>
+                        <select class="form-select" id="assessCapacity">
+                            <option value="">-- Select --</option>
+                            <option>🟢 CLEAR</option>
+                            <option>🟡 Heavy Load</option>
+                            <option>🔴 Over Capacity</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Stress Level</label>
+                        <select class="form-select" id="assessStress">
+                            <option value="">-- Select --</option>
+                            <option>Green</option>
+                            <option>Yellow</option>
+                            <option>Red</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-section-title">Team & Hours</div>
+                <div class="form-team-row">
+                    <div class="form-group">
+                        <label class="form-label">Lead Architect</label>
+                        <select class="form-select" id="assessLeadArch">
+                            <option value="">-- Select --</option>
+                            <option>Young Yoon</option>
+                            <option>Shaguni Gupta</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hours</label>
+                        <input type="number" class="form-input" id="assessLeadArchHrs" placeholder="0" min="0">
+                    </div>
+                </div>
+                <div class="form-team-row">
+                    <div class="form-group">
+                        <label class="form-label">Senior PM</label>
+                        <select class="form-select" id="assessSPM">
+                            <option value="">-- Select --</option>
+                            <option>Tammia Marcano</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hours</label>
+                        <input type="number" class="form-input" id="assessSPMHrs" placeholder="0" min="0">
+                    </div>
+                </div>
+                <div class="form-team-row">
+                    <div class="form-group">
+                        <label class="form-label">Assistant PM</label>
+                        <select class="form-select" id="assessAPM">
+                            <option value="">-- Select --</option>
+                            <option>Emma Fernandez</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hours</label>
+                        <input type="number" class="form-input" id="assessAPMHrs" placeholder="0" min="0">
+                    </div>
+                </div>
+                <div class="form-team-row">
+                    <div class="form-group">
+                        <label class="form-label">BIM / VDC</label>
+                        <select class="form-select" id="assessBIM">
+                            <option value="">-- Select --</option>
+                            <option>John Gil Corzo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hours</label>
+                        <input type="number" class="form-input" id="assessBIMHrs" placeholder="0" min="0">
+                    </div>
+                </div>
+                <div class="form-team-row">
+                    <div class="form-group">
+                        <label class="form-label">Coordinator</label>
+                        <select class="form-select" id="assessCoord">
+                            <option value="">-- Select --</option>
+                            <option>Melissa Galeano</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hours</label>
+                        <input type="number" class="form-input" id="assessCoordHrs" placeholder="0" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Leadership Hours</label>
+                    <input type="number" class="form-input" id="assessLeadershipHrs" placeholder="0" min="0">
+                </div>
+
+                <div class="form-section-title">Fee</div>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label class="form-label">Fee Floor ($) *</label>
+                        <input type="number" class="form-input" id="assessFeeFloor" required placeholder="0" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fee Range Low ($)</label>
+                        <input type="number" class="form-input" id="assessFeeLow" placeholder="0" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fee Range High ($)</label>
+                        <input type="number" class="form-input" id="assessFeeHigh" placeholder="0" min="0" step="0.01">
+                    </div>
+                </div>
+
+                <button type="submit" class="form-submit" id="assessSubmitBtn">📤 Submit for Approval</button>
+                <div class="form-success" id="assessFormSuccess">✅ Assessment submitted for approval!</div>
+                <div class="form-error" id="assessFormError">❌ Error submitting assessment.</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- APPROVAL DETAIL MODAL -->
+    <div class="modal-overlay" id="approvalDetailModal">
+        <div class="modal wide">
+            <div class="modal-header">
+                <h2 class="modal-title">✅ Assessment Review</h2>
+                <button class="modal-close" onclick="closeModal('approvalDetailModal')">&times;</button>
+            </div>
+            <div id="approvalDetailContent"></div>
+        </div>
+    </div>
+
     <script>
+        // ==================== GLOBALS ====================
         const API_URL = 'https://studio-rnb-api.jbridges-c38.workers.dev';
         
         const urlParams = new URLSearchParams(window.location.search);
@@ -573,126 +890,39 @@
         const filterProject = urlParams.get('project');
         const filterPhase = urlParams.get('phase');
         const isLeadership = urlParams.get('view') === 'leadership';
+        const defaultTab = urlParams.get('tab');
 
         let dashboardData = null;
         let filteredData = null;
+        let assessmentsData = null;
+        let clientsData = null;
+        let currentTab = defaultTab || 'dashboard';
 
-        async function fetchData() {
-            try {
-                const response = await fetch(API_URL);
-                if (!response.ok) throw new Error(`API Error: ${response.status}`);
-                dashboardData = await response.json();
-                if (dashboardData.error) throw new Error(dashboardData.error);
-                
-                applyFilters();
-                renderDashboard();
-            } catch (error) {
-                document.getElementById('app').innerHTML = `
-                    <div class="header">
-                        <div class="header-left"><h1>📊 Studio RNB Dashboard</h1></div>
-                        <button class="btn" onclick="fetchData()">🔄 Retry</button>
-                    </div>
-                    <div class="error-banner"><strong>Error:</strong> ${error.message}</div>
-                `;
-            }
+        // ==================== TAB SYSTEM ====================
+        function switchTab(tabName) {
+            currentTab = tabName;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            // Load data for tab if needed
+            if (tabName === 'dashboard' || tabName === 'time') loadDashboard();
+            if (tabName === 'assessments') loadAssessments();
+            if (tabName === 'approvals') loadApprovals();
         }
 
-        function applyFilters() {
-            let phases = [...dashboardData.phases];
-            let tasks = [...dashboardData.tasks];
-            
-            // Filter by user
-            if (filterUser) {
-                const userLower = filterUser.toLowerCase();
-                phases = phases.filter(p => p.teamMember && p.teamMember.toLowerCase().includes(userLower));
-                const phaseIds = phases.map(p => p.id);
-                tasks = tasks.filter(t => {
-                    const ownerMatch = t.owner && t.owner.toLowerCase().includes(userLower);
-                    const phaseMatch = t.phaseId && phaseIds.includes(t.phaseId);
-                    return ownerMatch || phaseMatch;
-                });
-            }
-            
-            // Filter by project
-            if (filterProject) {
-                const projLower = filterProject.toLowerCase();
-                phases = phases.filter(p => 
-                    p.projectName.toLowerCase().includes(projLower) || 
-                    p.displayName.toLowerCase().includes(projLower) ||
-                    p.entry.toLowerCase().includes(projLower)
-                );
-                const phaseIds = phases.map(p => p.id);
-                tasks = tasks.filter(t => t.phaseId && phaseIds.includes(t.phaseId));
-            }
-            
-            // Filter by phase type
-            if (filterPhase) {
-                const phaseLower = filterPhase.toLowerCase();
-                phases = phases.filter(p => p.phase.toLowerCase().includes(phaseLower));
-                const phaseIds = phases.map(p => p.id);
-                tasks = tasks.filter(t => t.phaseId && phaseIds.includes(t.phaseId));
-            }
-            
-            // Recalculate totals
-            let totalAllocated = 0, totalLogged = 0;
-            const phaseBreakdown = {};
-            const teamWorkload = {};
-            
-            phases.forEach(phase => {
-                totalAllocated += phase.hoursAllocated || 0;
-                totalLogged += phase.hoursLogged || 0;
-                
-                phase.tasks = tasks.filter(t => t.phaseId === phase.id);
-                phase.taskHoursTotal = phase.tasks.reduce((sum, t) => sum + (t.effort || 0), 0);
-                
-                if (!phaseBreakdown[phase.phase]) phaseBreakdown[phase.phase] = 0;
-                phaseBreakdown[phase.phase] += phase.hoursLogged || 0;
-                
-                if (phase.teamMember) {
-                    if (!teamWorkload[phase.teamMember]) teamWorkload[phase.teamMember] = { allocated: 0, logged: 0 };
-                    teamWorkload[phase.teamMember].allocated += phase.hoursAllocated || 0;
-                    teamWorkload[phase.teamMember].logged += phase.hoursLogged || 0;
-                }
-            });
-            
-            // Task status breakdown
-            const taskStatusBreakdown = { done: 0, inProgress: 0, notStarted: 0, inReview: 0 };
-            let overdueTasks = 0, dueSoonTasks = 0;
-            
-            tasks.forEach(t => {
-                const s = t.status.toLowerCase();
-                if (s === 'done') taskStatusBreakdown.done++;
-                else if (s === 'in progress') taskStatusBreakdown.inProgress++;
-                else if (s === 'in review') taskStatusBreakdown.inReview++;
-                else taskStatusBreakdown.notStarted++;
-                
-                if (t.dueDateStatus === 'overdue') overdueTasks++;
-                if (t.dueDateStatus === 'dueSoon') dueSoonTasks++;
-            });
-            
-            // Budget alerts
-            const budgetAlerts = phases
-                .filter(p => p.percentage >= 80 && p.hoursAllocated > 0)
-                .sort((a, b) => b.percentage - a.percentage);
-            
-            filteredData = {
-                phases,
-                tasks,
-                totalAllocated,
-                totalLogged,
-                totalRemaining: totalAllocated - totalLogged,
-                projectCount: new Set(phases.map(p => p.projectName)).size,
-                phaseBreakdown,
-                teamWorkload: filterUser ? teamWorkload : dashboardData.teamWorkload,
-                taskStatusBreakdown,
-                budgetAlerts,
-                thisWeekHours: dashboardData.thisWeekHours,
-                lastWeekHours: dashboardData.lastWeekHours,
-                overdueTasks,
-                dueSoonTasks,
-            };
-        }
+        // ==================== MODAL HELPERS ====================
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) this.classList.remove('active');
+            });
+        });
+
+        // ==================== HELPERS ====================
         function getPhaseClass(phase) {
             const map = { 'SD': 'phase-sd', 'DD': 'phase-dd', 'CD': 'phase-cd', 'Client Intake': 'phase-intake', 'Permitting': 'phase-permitting' };
             return map[phase] || 'phase-default';
@@ -717,646 +947,682 @@
             return 'status-not-started';
         }
 
+        function getAssessmentStatusClass(status) {
+            if (!status) return 'status-draft';
+            return 'status-' + status.toLowerCase().replace(/\s+/g, '-');
+        }
+
+        function getRiskClass(risk) {
+            if (!risk) return '';
+            return 'risk-' + risk.toLowerCase();
+        }
+
         function formatDate(dateStr) {
             if (!dateStr) return '-';
             const d = new Date(dateStr);
             return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
 
-        function exportToPDF() {
-            // Check if html2pdf is loaded
-            if (typeof html2pdf === 'undefined') {
-                alert('PDF export is loading... Please try again in a moment.');
-                // Try to load the library dynamically
-                const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-                document.head.appendChild(script);
-                return;
-            }
-            
-            const element = document.getElementById('app');
-            const btn = document.querySelector('.btn-primary');
-            
-            // Show loading state
-            if (btn) {
-                btn.innerHTML = '⏳ Generating...';
-                btn.disabled = true;
-            }
-            
-            const opt = {
-                margin: [10, 10, 10, 10],
-                filename: 'studio-rnb-dashboard-' + new Date().toISOString().split('T')[0] + '.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2, 
-                    backgroundColor: '#191919',
-                    useCORS: true,
-                    logging: false
-                },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-            };
-            
-            html2pdf().set(opt).from(element).save().then(() => {
-                // Reset button
-                if (btn) {
-                    btn.innerHTML = '📄 Export PDF';
-                    btn.disabled = false;
-                }
-            }).catch((err) => {
-                console.error('PDF export error:', err);
-                alert('PDF export failed. Try using Print (Ctrl+P) and select "Save as PDF" instead.');
-                if (btn) {
-                    btn.innerHTML = '📄 Export PDF';
-                    btn.disabled = false;
-                }
-            });
+        function formatCurrency(num) {
+            if (!num && num !== 0) return '-';
+            return '$' + Number(num).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
         }
 
+        // ==================== LOAD DASHBOARD ====================
+        async function loadDashboard() {
+            if (dashboardData) {
+                renderDashboard();
+                return;
+            }
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                dashboardData = await response.json();
+                if (dashboardData.error) throw new Error(dashboardData.error);
+                applyFilters();
+                renderDashboard();
+                renderTimeTab();
+            } catch (error) {
+                document.getElementById('tab-dashboard').innerHTML = `
+                    <div class="header"><div class="header-left"><h1>📊 Studio RNB Dashboard</h1></div>
+                    <button class="btn" onclick="dashboardData=null;loadDashboard()">🔄 Retry</button></div>
+                    <div class="error-banner"><strong>Error:</strong> ${error.message}</div>`;
+            }
+        }
+
+        // ==================== LOAD ASSESSMENTS ====================
+        async function loadAssessments() {
+            try {
+                const response = await fetch(`${API_URL}/assessments`);
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                assessmentsData = await response.json();
+                renderAssessmentsTab();
+            } catch (error) {
+                document.getElementById('tab-assessments').innerHTML = `
+                    <div class="error-banner"><strong>Error:</strong> ${error.message}</div>`;
+            }
+        }
+
+        // ==================== LOAD APPROVALS ====================
+        async function loadApprovals() {
+            try {
+                if (!assessmentsData) {
+                    const response = await fetch(`${API_URL}/assessments`);
+                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                    assessmentsData = await response.json();
+                }
+                renderApprovalsTab();
+            } catch (error) {
+                document.getElementById('tab-approvals').innerHTML = `
+                    <div class="error-banner"><strong>Error:</strong> ${error.message}</div>`;
+            }
+        }
+
+        // ==================== APPLY FILTERS ====================
+        function applyFilters() {
+            let phases = [...dashboardData.phases];
+            let tasks = [...dashboardData.tasks];
+            
+            if (filterUser) {
+                const userLower = filterUser.toLowerCase();
+                phases = phases.filter(p => p.teamMember && p.teamMember.toLowerCase().includes(userLower));
+            }
+            if (filterProject) {
+                const projLower = filterProject.toLowerCase();
+                phases = phases.filter(p => p.project.toLowerCase().includes(projLower) || p.entry.toLowerCase().includes(projLower));
+            }
+            if (filterPhase) {
+                const phaseLower = filterPhase.toLowerCase();
+                phases = phases.filter(p => p.phase.toLowerCase().includes(phaseLower));
+            }
+            
+            let totalAllocated = 0, totalLogged = 0;
+            const phaseBreakdown = {};
+            const teamWorkload = {};
+            
+            phases.forEach(phase => {
+                const alloc = Number(phase.hoursAllocated) || 0;
+                const logged = Number(phase.hoursLogged) || 0;
+                totalAllocated += alloc;
+                totalLogged += logged;
+                
+                const phaseName = phase.phase || 'Other';
+                if (!phaseBreakdown[phaseName]) phaseBreakdown[phaseName] = 0;
+                phaseBreakdown[phaseName] += logged;
+                
+                if (phase.teamMember) {
+                    if (!teamWorkload[phase.teamMember]) teamWorkload[phase.teamMember] = { allocated: 0, logged: 0 };
+                    teamWorkload[phase.teamMember].allocated += alloc;
+                    teamWorkload[phase.teamMember].logged += logged;
+                }
+            });
+            
+            const taskStatusBreakdown = { done: 0, inProgress: 0, notStarted: 0, inReview: 0 };
+            let overdueTasks = 0, dueSoonTasks = 0;
+            const now = new Date();
+            const threeDays = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+            
+            tasks.forEach(t => {
+                const s = (t.status || '').toLowerCase();
+                if (s === 'done') taskStatusBreakdown.done++;
+                else if (s === 'in progress') taskStatusBreakdown.inProgress++;
+                else if (s === 'in review') taskStatusBreakdown.inReview++;
+                else taskStatusBreakdown.notStarted++;
+                
+                if (t.dueDate && s !== 'done') {
+                    const due = new Date(t.dueDate);
+                    if (due < now) { overdueTasks++; t._dueStatus = 'overdue'; }
+                    else if (due < threeDays) { dueSoonTasks++; t._dueStatus = 'dueSoon'; }
+                }
+            });
+            
+            const budgetAlerts = phases
+                .filter(p => {
+                    const alloc = Number(p.hoursAllocated) || 0;
+                    const logged = Number(p.hoursLogged) || 0;
+                    return alloc > 0 && (logged / alloc) >= 0.8;
+                })
+                .map(p => ({
+                    ...p,
+                    percentage: Math.round((Number(p.hoursLogged) / Number(p.hoursAllocated)) * 100)
+                }))
+                .sort((a, b) => b.percentage - a.percentage);
+            
+            filteredData = {
+                phases, tasks, totalAllocated, totalLogged,
+                totalRemaining: totalAllocated - totalLogged,
+                phaseBreakdown, teamWorkload, taskStatusBreakdown,
+                budgetAlerts, overdueTasks, dueSoonTasks
+            };
+        }
+
+        // ==================== RENDER DASHBOARD TAB ====================
         function renderDashboard() {
             const data = filteredData;
             const completionPct = data.totalAllocated > 0 ? Math.round((data.totalLogged / data.totalAllocated) * 100) : 0;
             
-            // Determine title and badges
             let title = 'Studio RNB Dashboard';
             let badges = '<div class="badge live-badge"><span class="live-dot"></span> Live</div>';
             
-            if (filterUser) {
-                title = 'My Dashboard';
-                badges = `<span class="badge user-badge">${filterUser}</span>` + badges;
-            }
-            if (isLeadership) {
-                title = 'Leadership Dashboard';
-                badges = `<span class="badge leadership-badge">Leadership</span>` + badges;
-            }
-            if (filterProject) {
-                badges += `<span class="badge user-badge">Project: ${filterProject}</span>`;
-            }
-            if (filterPhase) {
-                badges += `<span class="badge user-badge">Phase: ${filterPhase}</span>`;
-            }
+            if (filterUser) { title = 'My Dashboard'; badges = `<span class="badge user-badge">${filterUser}</span>` + badges; }
+            if (isLeadership) { title = 'Leadership Dashboard'; badges = `<span class="badge leadership-badge">Leadership</span>` + badges; }
+            if (filterProject) badges += `<span class="badge user-badge">Project: ${filterProject}</span>`;
             
-            // Alert banners
             let alertsHTML = '';
             if (data.overdueTasks > 0) {
-                alertsHTML += `
-                    <div class="alert-banner">
-                        <span class="alert-icon">🚨</span>
-                        <div class="alert-content">
-                            <div class="alert-title">${data.overdueTasks} Overdue Task${data.overdueTasks > 1 ? 's' : ''}</div>
-                            <div class="alert-text">Tasks that have passed their due date</div>
-                        </div>
-                    </div>
-                `;
+                alertsHTML += `<div class="alert-banner"><span class="alert-icon">🚨</span><div class="alert-content"><div class="alert-title">${data.overdueTasks} Overdue Task${data.overdueTasks > 1 ? 's' : ''}</div><div class="alert-text">Tasks that have passed their due date</div></div></div>`;
             }
             if (data.dueSoonTasks > 0) {
-                alertsHTML += `
-                    <div class="alert-banner warning">
-                        <span class="alert-icon">⚠️</span>
-                        <div class="alert-content">
-                            <div class="alert-title">${data.dueSoonTasks} Task${data.dueSoonTasks > 1 ? 's' : ''} Due Soon</div>
-                            <div class="alert-text">Due within the next 3 days</div>
-                        </div>
-                    </div>
-                `;
+                alertsHTML += `<div class="alert-banner warning"><span class="alert-icon">⚠️</span><div class="alert-content"><div class="alert-title">${data.dueSoonTasks} Task${data.dueSoonTasks > 1 ? 's' : ''} Due Soon</div><div class="alert-text">Due within the next 3 days</div></div></div>`;
             }
             
-            // Budget alerts section (leadership only)
+            // Budget alerts (Senior PM + Leadership)
             let budgetAlertsHTML = '';
             if ((isLeadership || !filterUser) && data.budgetAlerts.length > 0) {
-                let alertRows = data.budgetAlerts.slice(0, 5).map(a => {
+                let rows = data.budgetAlerts.slice(0, 5).map(a => {
                     const pctClass = a.percentage >= 100 ? 'danger' : 'warning';
-                    return `
-                        <div class="budget-alert-row">
-                            <div>
-                                <div class="budget-alert-name">${a.displayName}</div>
-                                <div class="budget-alert-phase">${a.phase} • ${a.teamMember || 'Unassigned'}</div>
-                            </div>
-                            <div>${a.hoursLogged}/${a.hoursAllocated} hrs</div>
-                            <div class="budget-bar"><div class="budget-bar-fill ${pctClass}" style="width:${Math.min(a.percentage, 100)}%"></div></div>
-                            <div class="budget-pct ${pctClass}">${Math.round(a.percentage)}%</div>
-                        </div>
-                    `;
+                    return `<div class="budget-alert-row"><div><div class="budget-alert-name">${a.entry}</div><div class="budget-alert-phase">${a.phase} • ${a.teamMember || 'Unassigned'}</div></div><div>${Number(a.hoursLogged)}/${Number(a.hoursAllocated)} hrs</div><div class="budget-bar"><div class="budget-bar-fill ${pctClass}" style="width:${Math.min(a.percentage,100)}%"></div></div><div class="budget-pct ${pctClass}">${a.percentage}%</div></div>`;
                 }).join('');
-                
-                budgetAlertsHTML = `
-                    <div class="budget-alerts">
-                        <div class="section-title">🔥 Budget Alerts</div>
-                        ${alertRows}
-                    </div>
-                `;
+                budgetAlertsHTML = `<div class="budget-alerts"><div class="section-title">🔥 Budget Alerts</div>${rows}</div>`;
             }
             
-            // Weekly comparison (leadership only)
-            let weeklyCompareHTML = '';
-            if (isLeadership || !filterUser) {
-                const weekDiff = data.thisWeekHours - data.lastWeekHours;
-                const weekTrend = weekDiff >= 0 ? 'up' : 'down';
-                const weekTrendText = weekDiff >= 0 ? `↑ ${weekDiff} more than last week` : `↓ ${Math.abs(weekDiff)} less than last week`;
-                
-                weeklyCompareHTML = `
-                    <div class="card">
-                        <div class="card-label">This Week</div>
-                        <div class="card-value blue">${data.thisWeekHours}</div>
-                        <div class="card-subtitle">Hours logged</div>
-                        <div class="card-trend ${weekTrend}">${weekTrendText}</div>
-                    </div>
-                `;
-            }
-            
-            // Team workload chart (leadership only)
+            // Team workload (leadership)
             let teamWorkloadHTML = '';
             if ((isLeadership || !filterUser) && Object.keys(data.teamWorkload).length > 0) {
-                teamWorkloadHTML = `
-                    <div class="chart-card">
-                        <h3>👥 Team Workload</h3>
-                        <div class="chart-container tall"><canvas id="teamChart"></canvas></div>
-                    </div>
-                `;
-            }
-            
-            // Task status chart
-            let taskStatusHTML = '';
-            if (data.tasks.length > 0) {
-                taskStatusHTML = `
-                    <div class="chart-card">
-                        <h3>📋 Task Status</h3>
-                        <div class="chart-container"><canvas id="statusChart"></canvas></div>
-                    </div>
-                `;
-            }
-            
-            // Timeline/Gantt (only show phases with dates)
-            let timelineHTML = '';
-            const phasesWithDates = data.phases.filter(p => p.startDate && p.endDate);
-            if (phasesWithDates.length > 0) {
-                const allDates = phasesWithDates.flatMap(p => [new Date(p.startDate), new Date(p.endDate)]);
-                const minDate = new Date(Math.min(...allDates));
-                const maxDate = new Date(Math.max(...allDates));
-                const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)) || 1;
-                
-                // Generate month headers
-                const months = [];
-                let current = new Date(minDate);
-                while (current <= maxDate) {
-                    months.push(current.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
-                    current.setMonth(current.getMonth() + 1);
-                }
-                
-                const monthHeaders = months.map(m => `<div class="timeline-month">${m}</div>`).join('');
-                
-                const timelineRows = phasesWithDates.map(p => {
-                    const start = new Date(p.startDate);
-                    const end = new Date(p.endDate);
-                    const left = ((start - minDate) / (1000 * 60 * 60 * 24)) / totalDays * 100;
-                    const width = Math.max(((end - start) / (1000 * 60 * 60 * 24)) / totalDays * 100, 5);
-                    const barClass = getTimelineClass(p.phase);
-                    
-                    return `
-                        <div class="timeline-row">
-                            <div class="timeline-project">${p.displayName}</div>
-                            <div class="timeline-bar-container">
-                                <div class="timeline-bar ${barClass}" style="left:${left}%;width:${width}%">${p.phase}</div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                
-                timelineHTML = `
-                    <div class="timeline-section">
-                        <div class="section-title">📅 Project Timeline</div>
-                        <div class="timeline-container">
-                            <div class="timeline-header">
-                                <div class="timeline-label">Project</div>
-                                <div class="timeline-months">${monthHeaders}</div>
-                            </div>
-                            ${timelineRows}
-                        </div>
-                    </div>
-                `;
+                teamWorkloadHTML = `<div class="chart-card"><h3>👥 Team Workload</h3><div class="chart-container tall"><canvas id="teamChart"></canvas></div></div>`;
             }
             
             // Phase cards
-            let phasesHTML = '';
-            if (data.phases.length > 0) {
-                phasesHTML = data.phases.map(phase => {
-                    const pct = phase.percentage || 0;
-                    const progressClass = getProgressClass(pct);
-                    const phaseClass = getPhaseClass(phase.phase);
-                    
-                    let tasksHTML = '';
-                    if (phase.tasks && phase.tasks.length > 0) {
-                        tasksHTML = phase.tasks.map(task => {
-                            const statusClass = getStatusClass(task.status);
-                            const checkboxClass = task.status.toLowerCase() === 'done' ? 'done' : (task.status.toLowerCase() === 'in progress' ? 'in-progress' : '');
-                            const nameClass = task.status.toLowerCase() === 'done' ? 'done' : (task.dueDateStatus === 'overdue' ? 'overdue' : (task.dueDateStatus === 'dueSoon' ? 'due-soon' : ''));
-                            const dueClass = task.dueDateStatus === 'overdue' ? 'overdue' : (task.dueDateStatus === 'dueSoon' ? 'due-soon' : '');
-                            
-                            return `
-                                <div class="task-row">
-                                    <div class="task-checkbox ${checkboxClass}"></div>
-                                    <div class="task-name ${nameClass}">${task.action}</div>
-                                    <div class="task-effort">${task.effort || '-'} hrs</div>
-                                    <div class="task-due ${dueClass}">${formatDate(task.dueDate)}</div>
-                                    <div class="task-status ${statusClass}">${task.status}</div>
-                                </div>
-                            `;
-                        }).join('');
-                    } else {
-                        tasksHTML = '<div class="no-tasks">No tasks assigned</div>';
-                    }
-                    
-                    return `
-                        <div class="phase-card">
-                            <div class="phase-header" onclick="this.parentElement.classList.toggle('collapsed')">
-                                <div class="phase-info">
-                                    <span class="phase-name">${phase.displayName}</span>
-                                    <span class="phase-tag ${phaseClass}">${phase.phase}</span>
-                                </div>
-                                <div class="phase-stats">
-                                    <div class="phase-stat">
-                                        <div class="phase-stat-label">Budget</div>
-                                        <div class="phase-stat-value">${phase.hoursAllocated}h</div>
-                                    </div>
-                                    <div class="phase-stat">
-                                        <div class="phase-stat-label">Logged</div>
-                                        <div class="phase-stat-value">${phase.hoursLogged}h</div>
-                                    </div>
-                                    <div class="phase-stat">
-                                        <div class="phase-stat-label">Tasks</div>
-                                        <div class="phase-stat-value">${phase.tasks?.length || 0}</div>
-                                    </div>
-                                    <span class="expand-icon">▼</span>
-                                </div>
-                            </div>
-                            <div class="phase-content">
-                                <div class="phase-progress-bar">
-                                    <div class="phase-progress-fill ${progressClass}" style="width:${Math.min(pct,100)}%"></div>
-                                </div>
-                                <div class="phase-progress-text">
-                                    <span>${phase.taskHoursTotal || 0}h assigned to tasks</span>
-                                    <span>${Math.round(pct)}% used</span>
-                                </div>
-                                <div class="tasks-header">📋 Tasks (${phase.tasks?.length || 0})</div>
-                                ${tasksHTML}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            } else {
-                phasesHTML = '<div class="no-data">No phases found</div>';
-            }
-            
-            // Unassigned tasks
-            const phaseIds = data.phases.map(p => p.id);
-            const unassignedTasks = data.tasks.filter(t => !t.phaseId || !phaseIds.includes(t.phaseId));
-            let unassignedHTML = '';
-            if (unassignedTasks.length > 0) {
-                const rows = unassignedTasks.map(task => {
-                    const statusClass = getStatusClass(task.status);
-                    const dueClass = task.dueDateStatus === 'overdue' ? 'overdue' : (task.dueDateStatus === 'dueSoon' ? 'due-soon' : '');
-                    return `
-                        <div class="task-row">
-                            <div class="task-checkbox"></div>
-                            <div class="task-name">${task.action}</div>
-                            <div class="task-effort">${task.effort || '-'} hrs</div>
-                            <div class="task-due ${dueClass}">${formatDate(task.dueDate)}</div>
-                            <div class="task-status ${statusClass}">${task.status}</div>
-                        </div>
-                    `;
-                }).join('');
+            let phasesHTML = data.phases.length > 0 ? data.phases.map(phase => {
+                const alloc = Number(phase.hoursAllocated) || 0;
+                const logged = Number(phase.hoursLogged) || 0;
+                const pct = alloc > 0 ? Math.round((logged / alloc) * 100) : 0;
+                const progressClass = getProgressClass(pct);
+                const phaseClass = getPhaseClass(phase.phase);
                 
-                unassignedHTML = `
-                    <div class="other-tasks">
-                        <div class="section-title">📌 Unassigned Tasks (${unassignedTasks.length})</div>
-                        ${rows}
-                    </div>
-                `;
-            }
+                return `
+                    <div class="phase-card collapsed">
+                        <div class="phase-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                            <div class="phase-info">
+                                <span class="phase-name">${phase.entry}</span>
+                                <span class="phase-tag ${phaseClass}">${phase.phase}</span>
+                            </div>
+                            <div class="phase-stats">
+                                <div class="phase-stat"><div class="phase-stat-label">Budget</div><div class="phase-stat-value">${alloc}h</div></div>
+                                <div class="phase-stat"><div class="phase-stat-label">Logged</div><div class="phase-stat-value">${logged}h</div></div>
+                                <span class="expand-icon">▼</span>
+                            </div>
+                        </div>
+                        <div class="phase-content">
+                            <div class="phase-progress-bar"><div class="phase-progress-fill ${progressClass}" style="width:${Math.min(pct,100)}%"></div></div>
+                            <div class="phase-progress-text"><span>${pct}% used</span><span>${alloc - logged}h remaining</span></div>
+                        </div>
+                    </div>`;
+            }).join('') : '<div class="no-data">No phases found</div>';
 
-            // Render
-            document.getElementById('app').innerHTML = `
+            document.getElementById('tab-dashboard').innerHTML = `
                 <div class="header">
-                    <div class="header-left">
-                        <h1>📊 ${title}</h1>
-                        ${badges}
-                    </div>
+                    <div class="header-left"><h1>📊 ${title}</h1>${badges}</div>
                     <div class="header-actions">
-                        <button class="btn btn-log-hours" onclick="openLogHoursModal()">⏱️ Log Hours</button>
-                        <button class="btn" onclick="refreshData(this)">🔄 Refresh</button>
+                        <button class="btn" onclick="dashboardData=null;loadDashboard()">🔄 Refresh</button>
                         <button class="btn btn-primary" onclick="exportToPDF()">📄 Export PDF</button>
                     </div>
                 </div>
-                
                 ${alertsHTML}
-                
                 <div class="summary-cards">
-                    <div class="card">
-                        <div class="card-label">Hours Allocated</div>
-                        <div class="card-value gold">${data.totalAllocated}</div>
-                        <div class="card-subtitle">Total budget</div>
-                    </div>
-                    <div class="card">
-                        <div class="card-label">Hours Logged</div>
-                        <div class="card-value green">${data.totalLogged}</div>
-                        <div class="card-subtitle">${completionPct}% used</div>
-                    </div>
-                    <div class="card">
-                        <div class="card-label">Hours Remaining</div>
-                        <div class="card-value ${data.totalRemaining < 0 ? 'red' : 'blue'}">${Math.abs(data.totalRemaining)}</div>
-                        <div class="card-subtitle">${data.totalRemaining >= 0 ? 'Available' : 'Over budget'}</div>
-                    </div>
-                    <div class="card">
-                        <div class="card-label">Tasks</div>
-                        <div class="card-value purple">${data.tasks.length}</div>
-                        <div class="card-subtitle">${data.phases.length} phases</div>
-                    </div>
-                    ${weeklyCompareHTML}
+                    <div class="card"><div class="card-label">Hours Allocated</div><div class="card-value gold">${data.totalAllocated}</div><div class="card-subtitle">Total budget</div></div>
+                    <div class="card"><div class="card-label">Hours Logged</div><div class="card-value green">${data.totalLogged}</div><div class="card-subtitle">${completionPct}% used</div></div>
+                    <div class="card"><div class="card-label">Hours Remaining</div><div class="card-value ${data.totalRemaining < 0 ? 'red' : 'blue'}">${Math.abs(data.totalRemaining)}</div><div class="card-subtitle">${data.totalRemaining >= 0 ? 'Available' : 'Over budget'}</div></div>
+                    <div class="card"><div class="card-label">Tasks</div><div class="card-value purple">${data.tasks.length}</div><div class="card-subtitle">${data.phases.length} phases</div></div>
                 </div>
-                
                 ${budgetAlertsHTML}
-                
                 <div class="charts-grid">
-                    <div class="chart-card">
-                        <h3>⏱️ Hours Breakdown</h3>
-                        <div class="chart-container"><canvas id="hoursChart"></canvas></div>
-                    </div>
-                    <div class="chart-card">
-                        <h3>📊 Hours by Phase</h3>
-                        <div class="chart-container"><canvas id="phaseChart"></canvas></div>
-                    </div>
-                    ${taskStatusHTML}
+                    <div class="chart-card"><h3>⏱️ Hours Breakdown</h3><div class="chart-container"><canvas id="hoursChart"></canvas></div></div>
+                    <div class="chart-card"><h3>📊 Hours by Phase</h3><div class="chart-container"><canvas id="phaseChart"></canvas></div></div>
+                    ${data.tasks.length > 0 ? '<div class="chart-card"><h3>📋 Task Status</h3><div class="chart-container"><canvas id="statusChart"></canvas></div></div>' : ''}
                     ${teamWorkloadHTML}
                 </div>
-                
-                ${timelineHTML}
-                
-                ${unassignedHTML}
-                
-                <div class="phases-section">
-                    <div class="section-title">📁 Phases & Tasks</div>
-                    ${phasesHTML}
-                </div>
-                
-                <div class="last-updated">Last updated: ${new Date().toLocaleString()}</div>
-            `;
+                <div class="phases-section"><div class="section-title">📁 Phases & Tasks</div>${phasesHTML}</div>
+                <div class="last-updated">Last updated: ${new Date().toLocaleString()}</div>`;
 
             initCharts();
         }
 
-        async function refreshData(btn) {
-            btn.innerHTML = '⏳ Loading...';
-            await fetchData();
-            btn.innerHTML = '🔄 Refresh';
-        }
-
-        function initCharts() {
+        // ==================== RENDER TIME TAB ====================
+        function renderTimeTab() {
             const data = filteredData;
-            
-            // Hours Donut
-            const hoursCtx = document.getElementById('hoursChart');
-            if (hoursCtx) {
-                new Chart(hoursCtx.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Logged', 'Remaining'],
-                        datasets: [{
-                            data: [data.totalLogged, Math.max(data.totalRemaining, 0)],
-                            backgroundColor: ['#4CAF50', '#333'],
-                            borderWidth: 0,
-                            cutout: '70%'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { position: 'bottom', labels: { color: '#888', padding: 15, font: { size: 11 } } } }
-                    }
-                });
+            if (!data) return;
+
+            const recentLogs = (dashboardData.weeklyLogs || [])
+                .sort((a, b) => (b.weekEnding || '').localeCompare(a.weekEnding || ''))
+                .slice(0, 20);
+
+            let logsHTML = recentLogs.length > 0 ? recentLogs.map(log => `
+                <div class="task-row">
+                    <div class="task-checkbox done"></div>
+                    <div class="task-name">${log.entry}</div>
+                    <div class="task-effort">${log.hours}h</div>
+                    <div class="task-due">${formatDate(log.weekEnding)}</div>
+                    <div class="task-status status-done">${log.notes ? '📝' : ''}</div>
+                </div>
+            `).join('') : '<div class="no-tasks">No time entries yet</div>';
+
+            document.getElementById('tab-time').innerHTML = `
+                <div class="header">
+                    <div class="header-left"><h1>⏱️ Time Tracking</h1></div>
+                    <div class="header-actions">
+                        <button class="btn btn-log-hours" onclick="openLogHoursModal()">⏱️ Log Hours</button>
+                    </div>
+                </div>
+                <div class="summary-cards">
+                    <div class="card"><div class="card-label">Total Logged</div><div class="card-value green">${data.totalLogged}</div><div class="card-subtitle">hours</div></div>
+                    <div class="card"><div class="card-label">Total Allocated</div><div class="card-value gold">${data.totalAllocated}</div><div class="card-subtitle">hours budgeted</div></div>
+                    <div class="card"><div class="card-label">Remaining</div><div class="card-value ${data.totalRemaining < 0 ? 'red' : 'blue'}">${Math.abs(data.totalRemaining)}</div><div class="card-subtitle">${data.totalRemaining >= 0 ? 'available' : 'over budget'}</div></div>
+                </div>
+                <div class="other-tasks">
+                    <div class="section-title">📋 Recent Time Entries</div>
+                    ${logsHTML}
+                </div>`;
+        }
+
+        // ==================== RENDER ASSESSMENTS TAB ====================
+        function renderAssessmentsTab() {
+            const assessments = assessmentsData?.assessments || [];
+
+            let tableRows = '';
+            if (assessments.length > 0) {
+                tableRows = assessments.map(a => {
+                    const totalHours = (Number(a.leadArchitectHours)||0) + (Number(a.seniorPMHours)||0) + (Number(a.assistantPMHours)||0) + (Number(a.bimVdcHours)||0) + (Number(a.coordinatorHours)||0) + (Number(a.leadershipHours)||0);
+                    return `
+                    <tr>
+                        <td><strong>${a.title || '-'}</strong></td>
+                        <td>${a.projectType || '-'}</td>
+                        <td class="${getRiskClass(a.riskLevel)}">${a.riskLevel || '-'}</td>
+                        <td>${a.goStatus ? `<span class="${a.goStatus === 'Go' ? 'go-badge' : 'nogo-badge'}">${a.goStatus}</span>` : '-'}</td>
+                        <td>${a.package || '-'}</td>
+                        <td>${totalHours}h</td>
+                        <td>${formatCurrency(a.feeFloor)}</td>
+                        <td><span class="status-pill ${getAssessmentStatusClass(a.status)}">${a.status || 'Draft'}</span></td>
+                        <td>${formatDate(a.assessmentDate)}</td>
+                    </tr>`;
+                }).join('');
             }
-            
-            // Phase Bar
-            const phaseCtx = document.getElementById('phaseChart');
-            if (phaseCtx && Object.keys(data.phaseBreakdown).length > 0) {
-                const colors = { 'SD': '#64B5F6', 'DD': '#FFAB91', 'CD': '#81C784', 'Client Intake': '#CE93D8', 'Permitting': '#FFB74D' };
-                const labels = Object.keys(data.phaseBreakdown);
-                const values = Object.values(data.phaseBreakdown);
-                
-                new Chart(phaseCtx.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels,
-                        datasets: [{ data: values, backgroundColor: labels.map(l => colors[l] || '#888'), borderRadius: 4 }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#888', font: { size: 10 } } },
-                            x: { grid: { display: false }, ticks: { color: '#888', font: { size: 10 } } }
-                        },
-                        plugins: { legend: { display: false } }
-                    }
-                });
+
+            document.getElementById('tab-assessments').innerHTML = `
+                <div class="header">
+                    <div class="header-left"><h1>📋 Assessments</h1><span class="badge user-badge">Samuel's View</span></div>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="openAssessmentModal()">+ New Assessment</button>
+                        <button class="btn" onclick="assessmentsData=null;loadAssessments()">🔄 Refresh</button>
+                    </div>
+                </div>
+                ${assessments.length > 0 ? `
+                <div class="summary-cards">
+                    <div class="card"><div class="card-label">Total Assessments</div><div class="card-value gold">${assessments.length}</div></div>
+                    <div class="card"><div class="card-label">Pending Approval</div><div class="card-value orange">${assessments.filter(a => a.status === 'Submitted').length}</div></div>
+                    <div class="card"><div class="card-label">Approved</div><div class="card-value green">${assessments.filter(a => a.status === 'Approved' || a.status === 'Active' || a.status === 'Confirmed').length}</div></div>
+                    <div class="card"><div class="card-label">Needs Revision</div><div class="card-value red">${assessments.filter(a => a.status === 'Needs Revision').length}</div></div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="assessment-table">
+                        <thead><tr><th>Client</th><th>Type</th><th>Risk</th><th>Go/No-Go</th><th>Package</th><th>Hours</th><th>Fee Floor</th><th>Status</th><th>Date</th></tr></thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                </div>` : `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <div class="empty-state-title">No Assessments Yet</div>
+                    <div class="empty-state-text">Click "+ New Assessment" to submit your first client assessment from Excel.</div>
+                </div>`}`;
+        }
+
+        // ==================== RENDER APPROVALS TAB ====================
+        function renderApprovalsTab() {
+            const assessments = assessmentsData?.assessments || [];
+            const pending = assessments.filter(a => a.status === 'Submitted');
+            const needsRevision = assessments.filter(a => a.status === 'Needs Revision');
+            const recentActions = assessments.filter(a => ['Approved', 'Declined', 'Confirmed', 'Active'].includes(a.status)).slice(0, 5);
+
+            // Update badge
+            const badge = document.getElementById('approvalsBadge');
+            if (pending.length > 0) { badge.textContent = pending.length; badge.style.display = 'inline'; }
+            else { badge.style.display = 'none'; }
+
+            let pendingHTML = pending.length > 0 ? pending.map(a => {
+                const totalHours = (Number(a.leadArchitectHours)||0) + (Number(a.seniorPMHours)||0) + (Number(a.assistantPMHours)||0) + (Number(a.bimVdcHours)||0) + (Number(a.coordinatorHours)||0) + (Number(a.leadershipHours)||0);
+                return `
+                <div class="approval-detail">
+                    <div class="approval-detail-header">
+                        <div>
+                            <div class="approval-detail-title">${a.title || 'Untitled'}</div>
+                            <div style="color:#888;font-size:13px;margin-top:4px;">Submitted ${formatDate(a.assessmentDate)} by ${a.completedBy || 'Samuel'}</div>
+                        </div>
+                        <span class="status-pill status-submitted">Submitted</span>
+                    </div>
+                    <div class="detail-grid">
+                        <div class="detail-item"><div class="detail-label">Project Type</div><div class="detail-value">${a.projectType || '-'}</div></div>
+                        <div class="detail-item"><div class="detail-label">Risk Level</div><div class="detail-value ${getRiskClass(a.riskLevel)}">${a.riskLevel || '-'}</div></div>
+                        <div class="detail-item"><div class="detail-label">Go Status</div><div class="detail-value">${a.goStatus ? `<span class="${a.goStatus === 'Go' ? 'go-badge' : 'nogo-badge'}">${a.goStatus}</span>` : '-'}</div></div>
+                        <div class="detail-item"><div class="detail-label">Package</div><div class="detail-value">${a.package || '-'}</div></div>
+                        <div class="detail-item"><div class="detail-label">Delivery</div><div class="detail-value">${a.deliveryWindow || '-'}</div></div>
+                        <div class="detail-item"><div class="detail-label">Capacity</div><div class="detail-value">${a.capacityStatus || '-'}</div></div>
+                    </div>
+                    <div class="section-title" style="margin-top:12px;">Team & Hours (${totalHours}h total)</div>
+                    <div class="team-grid">
+                        ${a.leadArchitect ? `<div class="team-member-card"><div class="team-member-role">Lead Architect</div><div class="team-member-name">${a.leadArchitect}</div><div class="team-member-hours">${a.leadArchitectHours || 0}h</div></div>` : ''}
+                        ${a.seniorPM ? `<div class="team-member-card"><div class="team-member-role">Senior PM</div><div class="team-member-name">${a.seniorPM}</div><div class="team-member-hours">${a.seniorPMHours || 0}h</div></div>` : ''}
+                        ${a.assistantPM ? `<div class="team-member-card"><div class="team-member-role">Assistant PM</div><div class="team-member-name">${a.assistantPM}</div><div class="team-member-hours">${a.assistantPMHours || 0}h</div></div>` : ''}
+                        ${a.bimVdc ? `<div class="team-member-card"><div class="team-member-role">BIM / VDC</div><div class="team-member-name">${a.bimVdc}</div><div class="team-member-hours">${a.bimVdcHours || 0}h</div></div>` : ''}
+                        ${a.coordinator ? `<div class="team-member-card"><div class="team-member-role">Coordinator</div><div class="team-member-name">${a.coordinator}</div><div class="team-member-hours">${a.coordinatorHours || 0}h</div></div>` : ''}
+                        ${a.leadershipHours ? `<div class="team-member-card"><div class="team-member-role">Leadership</div><div class="team-member-name">Oversight</div><div class="team-member-hours">${a.leadershipHours}h</div></div>` : ''}
+                    </div>
+                    <div class="section-title">Fee</div>
+                    <div class="detail-grid">
+                        <div class="detail-item"><div class="detail-label">Fee Floor</div><div class="detail-value" style="color:#C9A227;font-size:18px;">${formatCurrency(a.feeFloor)}</div></div>
+                        <div class="detail-item"><div class="detail-label">Fee Range</div><div class="detail-value">${formatCurrency(a.feeRangeLow)} – ${formatCurrency(a.feeRangeHigh)}</div></div>
+                    </div>
+                    <div class="approval-actions">
+                        <button class="btn btn-approve" onclick="handleApproval('${a.id}', 'Approved')">✅ Approve</button>
+                        <button class="btn btn-revise" onclick="handleApproval('${a.id}', 'Needs Revision')">✏️ Request Revision</button>
+                        <button class="btn btn-decline" onclick="handleApproval('${a.id}', 'Declined')">❌ Decline</button>
+                    </div>
+                </div>`;
+            }).join('') : `<div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">No Pending Approvals</div><div class="empty-state-text">All assessments have been reviewed.</div></div>`;
+
+            let historyHTML = recentActions.length > 0 ? `
+                <div class="other-tasks" style="margin-top:24px;">
+                    <div class="section-title">📜 Recent Decisions</div>
+                    ${recentActions.map(a => `
+                        <div class="task-row">
+                            <div class="task-checkbox ${a.status === 'Approved' || a.status === 'Active' ? 'done' : ''}"></div>
+                            <div class="task-name">${a.title || '-'}</div>
+                            <div class="task-effort">${formatDate(a.approvedDate)}</div>
+                            <div class="task-due">${a.approvedBy || '-'}</div>
+                            <div class="task-status"><span class="status-pill ${getAssessmentStatusClass(a.status)}">${a.status}</span></div>
+                        </div>
+                    `).join('')}
+                </div>` : '';
+
+            document.getElementById('tab-approvals').innerHTML = `
+                <div class="header">
+                    <div class="header-left"><h1>✅ Approvals</h1><span class="badge leadership-badge">Jeremiah's View</span></div>
+                    <div class="header-actions">
+                        <button class="btn" onclick="assessmentsData=null;loadApprovals()">🔄 Refresh</button>
+                    </div>
+                </div>
+                <div class="summary-cards">
+                    <div class="card"><div class="card-label">Pending Review</div><div class="card-value orange">${pending.length}</div></div>
+                    <div class="card"><div class="card-label">Needs Revision</div><div class="card-value red">${needsRevision.length}</div></div>
+                    <div class="card"><div class="card-label">Approved</div><div class="card-value green">${assessments.filter(a => ['Approved','Confirmed','Active'].includes(a.status)).length}</div></div>
+                    <div class="card"><div class="card-label">Total Assessments</div><div class="card-value gold">${assessments.length}</div></div>
+                </div>
+                <div class="section-title" style="margin-top:24px;">📥 Pending Assessments (${pending.length})</div>
+                ${pendingHTML}
+                ${historyHTML}`;
+        }
+
+        // ==================== HANDLE APPROVAL ====================
+        async function handleApproval(assessmentId, newStatus) {
+            let notes = '';
+            if (newStatus === 'Needs Revision') {
+                notes = prompt('What changes are needed?');
+                if (notes === null) return;
             }
-            
-            // Task Status Pie
-            const statusCtx = document.getElementById('statusChart');
-            if (statusCtx) {
-                const statusData = data.taskStatusBreakdown;
-                new Chart(statusCtx.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Done', 'In Progress', 'In Review', 'Not Started'],
-                        datasets: [{
-                            data: [statusData.done, statusData.inProgress, statusData.inReview, statusData.notStarted],
-                            backgroundColor: ['#4CAF50', '#FF9800', '#8B5CF6', '#9CA3AF'],
-                            borderWidth: 0,
-                            cutout: '60%'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { position: 'bottom', labels: { color: '#888', padding: 10, font: { size: 10 } } } }
-                    }
-                });
+            if (newStatus === 'Declined') {
+                if (!confirm('Are you sure you want to decline this assessment?')) return;
+                notes = prompt('Reason for declining (optional):') || '';
             }
-            
-            // Team Workload
-            const teamCtx = document.getElementById('teamChart');
-            if (teamCtx && Object.keys(data.teamWorkload).length > 0) {
-                const teamLabels = Object.keys(data.teamWorkload);
-                const allocated = teamLabels.map(t => data.teamWorkload[t].allocated);
-                const logged = teamLabels.map(t => data.teamWorkload[t].logged);
-                
-                new Chart(teamCtx.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: teamLabels.map(l => l.split(' ')[0]), // First name only
-                        datasets: [
-                            { label: 'Allocated', data: allocated, backgroundColor: '#C9A227', borderRadius: 4 },
-                            { label: 'Logged', data: logged, backgroundColor: '#4CAF50', borderRadius: 4 }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#888', font: { size: 10 } } },
-                            x: { grid: { display: false }, ticks: { color: '#888', font: { size: 10 } } }
-                        },
-                        plugins: { legend: { position: 'top', labels: { color: '#888', padding: 15, font: { size: 10 } } } }
-                    }
+            if (newStatus === 'Approved') {
+                notes = prompt('Any notes? (optional):') || '';
+            }
+
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const response = await fetch(`${API_URL}/assessments/${assessmentId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: newStatus,
+                        approvedBy: 'Jeremiah Bridges',
+                        approvedDate: today,
+                        approvalNotes: notes,
+                        revisionNotes: newStatus === 'Needs Revision' ? notes : undefined
+                    })
                 });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(`Assessment ${newStatus.toLowerCase()} successfully!`);
+                    assessmentsData = null;
+                    loadApprovals();
+                } else {
+                    throw new Error('Failed to update');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
             }
         }
 
-        document.addEventListener('DOMContentLoaded', fetchData);
-    </script>
-    
-    <!-- Log Hours Modal -->
-    <div class="modal-overlay" id="logHoursModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 class="modal-title">⏱️ Log Hours</h2>
-                <button class="modal-close" onclick="closeLogHoursModal()">&times;</button>
-            </div>
-            <form id="logHoursForm" onsubmit="submitLogHours(event)">
-                <div class="form-group">
-                    <label class="form-label">Select Phase *</label>
-                    <select class="form-select" id="phaseSelect" required>
-                        <option value="">-- Select a phase --</option>
-                    </select>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Hours *</label>
-                        <input type="number" class="form-input" id="hoursInput" step="0.25" min="0.25" max="24" required placeholder="e.g. 4.5">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Week Ending *</label>
-                        <input type="date" class="form-input" id="weekEndingInput" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Notes (optional)</label>
-                    <textarea class="form-textarea" id="notesInput" placeholder="What did you work on?"></textarea>
-                </div>
-                <button type="submit" class="form-submit" id="submitBtn">Submit Hours</button>
-                <div class="form-success" id="formSuccess">✅ Hours logged successfully! Dashboard will refresh.</div>
-                <div class="form-error" id="formError">❌ Error logging hours. Please try again.</div>
-            </form>
-        </div>
-    </div>
-    
-    <script>
-        // Log Hours Modal Functions
+        // ==================== SUBMIT ASSESSMENT ====================
+        function openAssessmentModal() {
+            document.getElementById('assessmentForm').reset();
+            document.getElementById('assessFormSuccess').style.display = 'none';
+            document.getElementById('assessFormError').style.display = 'none';
+            document.getElementById('assessSubmitBtn').disabled = false;
+            document.getElementById('assessSubmitBtn').textContent = '📤 Submit for Approval';
+            openModal('assessmentModal');
+        }
+
+        async function submitAssessment(event) {
+            event.preventDefault();
+            const btn = document.getElementById('assessSubmitBtn');
+            const success = document.getElementById('assessFormSuccess');
+            const error = document.getElementById('assessFormError');
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Submitting...';
+            success.style.display = 'none';
+            error.style.display = 'none';
+
+            const today = new Date().toISOString().split('T')[0];
+
+            const body = {
+                title: document.getElementById('assessClientName').value,
+                assessmentDate: today,
+                completedBy: 'Samuel Crook',
+                projectType: document.getElementById('assessProjectType').value,
+                jurisdiction: document.getElementById('assessJurisdiction').value,
+                deliveryExpectation: document.getElementById('assessDelivery').value || undefined,
+                scheduleUrgencyInput: document.getElementById('assessUrgency').value || undefined,
+                riskLevel: document.getElementById('assessRiskLevel').value,
+                goStatus: document.getElementById('assessGoStatus').value,
+                clientReadiness: document.getElementById('assessReadiness').value || undefined,
+                complexityLevel: document.getElementById('assessComplexity').value || undefined,
+                package: document.getElementById('assessPackage').value,
+                lane: document.getElementById('assessLane').value || undefined,
+                deliveryWindow: document.getElementById('assessDeliveryWindow').value || undefined,
+                capacityStatus: document.getElementById('assessCapacity').value || undefined,
+                stressLevel: document.getElementById('assessStress').value || undefined,
+                leadArchitect: document.getElementById('assessLeadArch').value || undefined,
+                leadArchitectHours: document.getElementById('assessLeadArchHrs').value || 0,
+                seniorPM: document.getElementById('assessSPM').value || undefined,
+                seniorPMHours: document.getElementById('assessSPMHrs').value || 0,
+                assistantPM: document.getElementById('assessAPM').value || undefined,
+                assistantPMHours: document.getElementById('assessAPMHrs').value || 0,
+                bimVdc: document.getElementById('assessBIM').value || undefined,
+                bimVdcHours: document.getElementById('assessBIMHrs').value || 0,
+                coordinator: document.getElementById('assessCoord').value || undefined,
+                coordinatorHours: document.getElementById('assessCoordHrs').value || 0,
+                leadershipHours: document.getElementById('assessLeadershipHrs').value || 0,
+                feeFloor: document.getElementById('assessFeeFloor').value,
+                feeRangeLow: document.getElementById('assessFeeLow').value || 0,
+                feeRangeHigh: document.getElementById('assessFeeHigh').value || 0,
+                status: 'Submitted'
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/assessments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    success.style.display = 'block';
+                    btn.textContent = '✅ Submitted!';
+                    setTimeout(() => {
+                        closeModal('assessmentModal');
+                        assessmentsData = null;
+                        loadAssessments();
+                    }, 1500);
+                } else {
+                    throw new Error(JSON.stringify(result));
+                }
+            } catch (err) {
+                error.style.display = 'block';
+                error.textContent = `❌ Error: ${err.message}`;
+                btn.disabled = false;
+                btn.textContent = '📤 Submit for Approval';
+            }
+        }
+
+        // ==================== LOG HOURS ====================
         function openLogHoursModal() {
-            const modal = document.getElementById('logHoursModal');
             const phaseSelect = document.getElementById('phaseSelect');
             const weekEndingInput = document.getElementById('weekEndingInput');
             
-            // Populate phases dropdown
             phaseSelect.innerHTML = '<option value="">-- Select a phase --</option>';
-            
-            if (filteredData && filteredData.phases) {
+            if (filteredData?.phases) {
                 filteredData.phases.forEach(phase => {
-                    const option = document.createElement('option');
-                    option.value = phase.id;
-                    option.textContent = `${phase.entry} (${phase.hoursLogged}/${phase.hoursAllocated} hrs)`;
-                    phaseSelect.appendChild(option);
+                    const opt = document.createElement('option');
+                    opt.value = phase.id;
+                    opt.textContent = `${phase.entry} (${Number(phase.hoursLogged)||0}/${Number(phase.hoursAllocated)||0} hrs)`;
+                    phaseSelect.appendChild(opt);
                 });
             }
             
-            // Set default week ending to next Friday
             const today = new Date();
-            const dayOfWeek = today.getDay();
-            const daysUntilFriday = (5 - dayOfWeek + 7) % 7 || 7;
+            const daysUntilFriday = (5 - today.getDay() + 7) % 7 || 7;
             const nextFriday = new Date(today);
             nextFriday.setDate(today.getDate() + daysUntilFriday);
             weekEndingInput.value = nextFriday.toISOString().split('T')[0];
             
-            // Reset form
             document.getElementById('hoursInput').value = '';
             document.getElementById('notesInput').value = '';
-            document.getElementById('formSuccess').style.display = 'none';
-            document.getElementById('formError').style.display = 'none';
-            document.getElementById('submitBtn').disabled = false;
-            document.getElementById('submitBtn').textContent = 'Submit Hours';
+            document.getElementById('logFormSuccess').style.display = 'none';
+            document.getElementById('logFormError').style.display = 'none';
+            document.getElementById('logSubmitBtn').disabled = false;
+            document.getElementById('logSubmitBtn').textContent = 'Submit Hours';
             
-            modal.classList.add('active');
+            openModal('logHoursModal');
         }
-        
-        function closeLogHoursModal() {
-            document.getElementById('logHoursModal').classList.remove('active');
-        }
-        
+
         async function submitLogHours(event) {
             event.preventDefault();
-            
-            const submitBtn = document.getElementById('submitBtn');
-            const formSuccess = document.getElementById('formSuccess');
-            const formError = document.getElementById('formError');
+            const btn = document.getElementById('logSubmitBtn');
+            const success = document.getElementById('logFormSuccess');
+            const error = document.getElementById('logFormError');
             
             const phaseId = document.getElementById('phaseSelect').value;
             const hours = parseFloat(document.getElementById('hoursInput').value);
             const weekEnding = document.getElementById('weekEndingInput').value;
             const notes = document.getElementById('notesInput').value;
-            
-            // Get phase name for entry title
             const phase = filteredData.phases.find(p => p.id === phaseId);
             const entryName = phase ? `${phase.entry} - ${weekEnding}` : `Time Entry - ${weekEnding}`;
             
-            // Disable button and show loading
-            submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ Submitting...';
-            formSuccess.style.display = 'none';
-            formError.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = '⏳ Submitting...';
+            success.style.display = 'none';
+            error.style.display = 'none';
             
             try {
-                const response = await fetch(API_URL, {
+                const response = await fetch(`${API_URL}/log-hours`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        entry: entryName,
-                        phaseId: phaseId,
-                        hours: hours,
-                        weekEnding: weekEnding,
-                        notes: notes
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phaseEntryId: phaseId, entry: entryName, hours, weekEnding, notes })
                 });
                 
                 const result = await response.json();
-                
                 if (result.success) {
-                    formSuccess.style.display = 'block';
-                    submitBtn.textContent = '✅ Submitted!';
-                    
-                    // Refresh dashboard after 1.5 seconds
+                    success.style.display = 'block';
+                    btn.textContent = '✅ Submitted!';
                     setTimeout(() => {
-                        closeLogHoursModal();
-                        fetchData();
+                        closeModal('logHoursModal');
+                        dashboardData = null;
+                        loadDashboard();
                     }, 1500);
-                } else {
-                    throw new Error(result.error || 'Unknown error');
-                }
-                
-            } catch (error) {
-                console.error('Error submitting hours:', error);
-                formError.style.display = 'block';
-                formError.textContent = `❌ Error: ${error.message}`;
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit Hours';
+                } else { throw new Error(result.error || 'Unknown error'); }
+            } catch (err) {
+                error.style.display = 'block';
+                error.textContent = `❌ Error: ${err.message}`;
+                btn.disabled = false;
+                btn.textContent = 'Submit Hours';
             }
         }
-        
-        // Close modal when clicking outside
-        document.getElementById('logHoursModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeLogHoursModal();
+
+        // ==================== CHARTS ====================
+        function initCharts() {
+            const data = filteredData;
+            
+            const hoursCtx = document.getElementById('hoursChart');
+            if (hoursCtx) {
+                new Chart(hoursCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: { labels: ['Logged', 'Remaining'], datasets: [{ data: [data.totalLogged, Math.max(data.totalRemaining, 0)], backgroundColor: ['#4CAF50', '#333'], borderWidth: 0, cutout: '70%' }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#888', padding: 15, font: { size: 11 } } } } }
+                });
             }
+            
+            const phaseCtx = document.getElementById('phaseChart');
+            if (phaseCtx && Object.keys(data.phaseBreakdown).length > 0) {
+                const colors = { 'SD': '#64B5F6', 'DD': '#FFAB91', 'CD': '#81C784', 'Client Intake': '#CE93D8', 'Permitting': '#FFB74D' };
+                const labels = Object.keys(data.phaseBreakdown);
+                new Chart(phaseCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: { labels, datasets: [{ data: Object.values(data.phaseBreakdown), backgroundColor: labels.map(l => colors[l] || '#888'), borderRadius: 4 }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#888' } }, x: { grid: { display: false }, ticks: { color: '#888' } } }, plugins: { legend: { display: false } } }
+                });
+            }
+            
+            const statusCtx = document.getElementById('statusChart');
+            if (statusCtx) {
+                const s = data.taskStatusBreakdown;
+                new Chart(statusCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: { labels: ['Done', 'In Progress', 'In Review', 'Not Started'], datasets: [{ data: [s.done, s.inProgress, s.inReview, s.notStarted], backgroundColor: ['#4CAF50', '#FF9800', '#8B5CF6', '#9CA3AF'], borderWidth: 0, cutout: '60%' }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#888', padding: 10, font: { size: 10 } } } } }
+                });
+            }
+            
+            const teamCtx = document.getElementById('teamChart');
+            if (teamCtx && Object.keys(data.teamWorkload).length > 0) {
+                const labels = Object.keys(data.teamWorkload);
+                new Chart(teamCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: { labels: labels.map(l => l.split(' ')[0]), datasets: [{ label: 'Allocated', data: labels.map(t => data.teamWorkload[t].allocated), backgroundColor: '#C9A227', borderRadius: 4 }, { label: 'Logged', data: labels.map(t => data.teamWorkload[t].logged), backgroundColor: '#4CAF50', borderRadius: 4 }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#888' } }, x: { grid: { display: false }, ticks: { color: '#888' } } }, plugins: { legend: { position: 'top', labels: { color: '#888', padding: 15 } } } }
+                });
+            }
+        }
+
+        // ==================== PDF EXPORT ====================
+        function exportToPDF() {
+            if (typeof html2pdf === 'undefined') { alert('PDF export loading...'); return; }
+            const el = document.getElementById('tab-dashboard');
+            html2pdf().set({
+                margin: [10,10,10,10],
+                filename: 'studio-rnb-dashboard-' + new Date().toISOString().split('T')[0] + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, backgroundColor: '#191919', useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            }).from(el).save();
+        }
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            if (defaultTab) switchTab(defaultTab);
+            else loadDashboard();
         });
     </script>
 </body>
