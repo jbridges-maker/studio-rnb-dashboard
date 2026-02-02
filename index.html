@@ -2724,12 +2724,183 @@
                     </div>
 
                     <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
-                        <div style="color:#666;font-size:12px;align-self:center;">Use buttons at bottom of screen ↓</div>
+                        <button class="btn" id="ksExport" style="background:#333;">📄 Export Client PDF</button>
+                        <button class="btn btn-approve" id="ksSubmit" style="padding:12px 24px;font-size:15px;">🚀 Submit Kickoff Plan</button>
                     </div>
                 </div>`;
 
             // Show the static action bar
             document.getElementById('kickoffActionBar').style.display = 'block';
+
+            // Direct button wiring after innerHTML set
+            var ksS = document.getElementById('ksSubmit');
+            var ksE = document.getElementById('ksExport');
+            if (ksS) ksS.onclick = function() { doSubmitKickoff(); };
+            if (ksE) ksE.onclick = function() { doExportKickoff(); };
+        }
+
+        // ==================== KICKOFF SUBMIT (standalone) ====================
+        function doSubmitKickoff() {
+            var a = kickoffState.selectedAssessment;
+            if (!a) { alert('No project selected.'); return; }
+            if (!kickoffState.kickoffDate) { alert('Please set a kickoff meeting date.'); return; }
+            if (kickoffState.phases.length === 0) { alert('Please add at least one phase.'); return; }
+
+            var hasAnyDates = false;
+            for (var i = 0; i < kickoffState.phases.length; i++) {
+                if (kickoffState.phases[i].startDate && kickoffState.phases[i].endDate) { hasAnyDates = true; break; }
+            }
+            if (!hasAnyDates) { alert('Please set dates for at least one phase.'); return; }
+
+            var totalBudget = 0;
+            for (var i = 0; i < kickoffState.phases.length; i++) {
+                for (var j = 0; j < kickoffState.phases[i].team.length; j++) {
+                    totalBudget += (Number(kickoffState.phases[i].team[j].hours) || 0);
+                }
+            }
+
+            if (!confirm('Submit kickoff plan for "' + a.title + '"?\n\nThis will create ' + kickoffState.phases.length + ' phase(s) and notify ' + (kickoffState.saReviewer || 'no SA') + ' for review.')) return;
+
+            var btn = document.getElementById('ksSubmit');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Creating...'; }
+
+            var payload = {
+                assessmentId: a.id,
+                clientName: a.title || a.clientName || 'Untitled',
+                kickoffDate: kickoffState.kickoffDate,
+                saReviewer: kickoffState.saReviewer,
+                pmName: filterUser || 'Tammia Marcano',
+                phases: kickoffState.phases,
+                milestones: kickoffState.milestones,
+                totalBudget: totalBudget,
+                notes: kickoffState.notes
+            };
+
+            fetch(API_URL + '/kickoff', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(result) {
+                if (result.success || result.created > 0) {
+                    alert('Kickoff plan submitted!\n' + result.created + ' phase entries created.\n' + (kickoffState.saReviewer ? kickoffState.saReviewer + ' has been notified for review.' : ''));
+                    kickoffState.selectedAssessment = null;
+                    assessmentsData = null;
+                    dashboardData = null;
+                    pendingClientsData = null;
+                    document.getElementById('kickoffActionBar').style.display = 'none';
+                    loadKickoff();
+                } else {
+                    if (btn) { btn.disabled = false; btn.textContent = '🚀 Submit Kickoff Plan'; }
+                    alert('Submission failed:\n' + JSON.stringify(result));
+                }
+            })
+            .catch(function(err) {
+                alert('Error: ' + err.message);
+                if (btn) { btn.disabled = false; btn.textContent = '🚀 Submit Kickoff Plan'; }
+            });
+        }
+
+        // ==================== KICKOFF EXPORT (standalone) ====================
+        function doExportKickoff() {
+            var a = kickoffState.selectedAssessment;
+            if (!a) { alert('No project selected.'); return; }
+
+            var totalPlanned = 0;
+            for (var i = 0; i < kickoffState.phases.length; i++) {
+                for (var j = 0; j < kickoffState.phases[i].team.length; j++) {
+                    totalPlanned += (Number(kickoffState.phases[i].team[j].hours) || 0);
+                }
+            }
+
+            var phaseRows = '';
+            for (var i = 0; i < kickoffState.phases.length; i++) {
+                var p = kickoffState.phases[i];
+                var phaseHrs = 0;
+                var teamDetail = [];
+                for (var j = 0; j < p.team.length; j++) {
+                    phaseHrs += (Number(p.team[j].hours) || 0);
+                    if (p.team[j].hours > 0) {
+                        teamDetail.push(p.team[j].member.split(' ')[0] + ': ' + p.team[j].hours + 'h');
+                    }
+                }
+                var startStr = p.startDate ? new Date(p.startDate).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '-';
+                var endStr = p.endDate ? new Date(p.endDate).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '-';
+                phaseRows += '<tr><td style="font-weight:600;color:#8B6914;">' + p.name + '</td><td>' + startStr + '</td><td>' + endStr + '</td><td style="font-weight:600;">' + phaseHrs + 'h</td><td style="color:#666;font-size:11px;">' + teamDetail.join(', ') + '</td></tr>';
+            }
+
+            var msRows = '';
+            var milestoneData = [
+                { label: 'Concept Review', m: kickoffState.milestones.concept, color: '#4a90d9' },
+                { label: 'Midpoint Review', m: kickoffState.milestones.midpoint, color: '#d4a017' },
+                { label: 'Final Review', m: kickoffState.milestones.final, color: '#2e7d32' }
+            ];
+            for (var i = 0; i < milestoneData.length; i++) {
+                var ms = milestoneData[i];
+                if (ms.m && ms.m.date) {
+                    msRows += '<tr><td><span style="display:inline-block;width:10px;height:10px;background:' + ms.color + ';border-radius:2px;margin-right:6px;"></span>' + ms.label + '</td><td>' + new Date(ms.m.date).toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'}) + '</td><td>' + (ms.m.notes || '-') + '</td></tr>';
+                }
+            }
+
+            var dateStr = new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'});
+            var kickoffDateStr = kickoffState.kickoffDate ? new Date(kickoffState.kickoffDate).toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'}) : '-';
+
+            var pdfBody = '<div style="font-family:Segoe UI,Roboto,sans-serif;max-width:800px;margin:0 auto;padding:40px;background:#fff;color:#222;">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #8B6914;padding-bottom:20px;margin-bottom:30px;">' +
+                '<div><div style="font-size:28px;font-weight:700;color:#1a1a1a;">STUDIO RNB</div><div style="font-size:12px;color:#888;letter-spacing:2px;margin-top:2px;">ARCHITECTURE & DESIGN</div></div>' +
+                '<div style="text-align:right;"><div style="font-size:18px;font-weight:600;color:#8B6914;">Project Kickoff Plan</div><div style="color:#888;font-size:12px;">' + dateStr + '</div></div></div>' +
+                '<div style="background:#f8f6f0;border-radius:8px;padding:20px;margin-bottom:24px;">' +
+                '<div style="font-size:22px;font-weight:700;color:#1a1a1a;margin-bottom:8px;">' + (a.title || 'Untitled Project') + '</div>' +
+                '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;color:#555;font-size:13px;">' +
+                '<div><strong>Type:</strong> ' + (a.projectType || '-') + '</div>' +
+                '<div><strong>Package:</strong> ' + (a.package || '-') + '</div>' +
+                '<div><strong>Kickoff:</strong> ' + kickoffDateStr + '</div></div></div>' +
+                '<h3 style="font-size:16px;color:#8B6914;border-bottom:1px solid #ddd;padding-bottom:8px;margin:24px 0 12px;">Phase Timeline</h3>' +
+                '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+                '<tr style="background:#f5f5f5;"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Phase</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Start</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">End</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Hours</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Team</th></tr>' +
+                phaseRows +
+                '<tr style="background:#f8f6f0;font-weight:700;"><td style="padding:8px 12px;">Total</td><td></td><td></td><td style="padding:8px 12px;color:#8B6914;">' + totalPlanned + 'h</td><td></td></tr></table>' +
+                (msRows ? '<h3 style="font-size:16px;color:#8B6914;border-bottom:1px solid #ddd;padding-bottom:8px;margin:24px 0 12px;">Key Milestones</h3><table style="width:100%;border-collapse:collapse;font-size:13px;"><tr style="background:#f5f5f5;"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Milestone</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Date</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Notes</th></tr>' + msRows + '</table>' : '') +
+                '<div style="margin-top:40px;padding-top:20px;border-top:1px solid #ddd;color:#999;font-size:11px;text-align:center;">Studio RNB &bull; Architecture & Design &bull; Generated ' + dateStr + '</div></div>';
+
+            // Open in new window for printing
+            var win = window.open('', '_blank');
+            if (win) {
+                win.document.write('<!DOCTYPE html><html><head><title>Studio RNB Kickoff - ' + (a.title || 'Project') + '</title><style>body{margin:0;padding:0;}</style></head><body>' + pdfBody + '</body></html>');
+                win.document.close();
+                setTimeout(function() { win.print(); }, 600);
+            } else {
+                alert('Please allow popups to export PDF.');
+            }
+        }
+
+        // ==================== FINALIZE PROJECT ====================
+        function finalizeProject(assessmentId) {
+            if (!confirm('Set this project as Active? Phase tracking will begin and Client Portal will be updated.')) return;
+            
+            fetch(API_URL + '/assessments/' + assessmentId, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    status: 'Active',
+                    kickoffStatus: 'Complete'
+                })
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(result) {
+                if (result.success) {
+                    alert('Project is now Active! 🟢\nClient Portal has been updated — Softr will reflect this immediately.');
+                    assessmentsData = null;
+                    dashboardData = null;
+                    pendingClientsData = null;
+                    document.getElementById('kickoffActionBar').style.display = 'none';
+                    loadKickoff();
+                } else { 
+                    alert('Failed to set project active: ' + JSON.stringify(result));
+                }
+            })
+            .catch(function(e) { alert('Error: ' + e.message); });
         }
 
         // ==================== KICKOFF FORM HELPERS ====================
@@ -3033,198 +3204,6 @@
                     loadKickoff();
                 } else { throw new Error('Failed'); }
             } catch (e) { alert('Error: ' + e.message); }
-        }
-
-        // ==================== SUBMIT KICKOFF ====================
-        async function submitKickoff(btnEl) {
-            alert('Submit clicked - function reached');
-            try {
-                const a = kickoffState.selectedAssessment;
-                if (!a) { alert('No assessment selected. Please select a project first.'); return; }
-
-                // Validate
-                if (!kickoffState.kickoffDate) { alert('Please set a kickoff meeting date.'); return; }
-                if (kickoffState.phases.length === 0) { alert('Please add at least one phase.'); return; }
-
-                const hasAnyDates = kickoffState.phases.some(p => p.startDate && p.endDate);
-                if (!hasAnyDates) { alert('Please set dates for at least one phase.'); return; }
-
-                if (!confirm('Submit kickoff plan for "' + a.title + '"?\n\nThis will create ' + kickoffState.phases.length + ' phase(s) in the Time Log and notify ' + (kickoffState.saReviewer || 'no SA') + ' for review.')) return;
-
-                const btn = btnEl || document.getElementById('kickoffSubmitBtn');
-                if (btn) { btn.disabled = true; btn.textContent = '⏳ Creating...'; }
-
-                const payload = {
-                    assessmentId: a.id,
-                    clientName: a.title || a.clientName || 'Untitled',
-                    kickoffDate: kickoffState.kickoffDate,
-                    saReviewer: kickoffState.saReviewer,
-                    pmName: filterUser || 'Tammia Marcano',
-                    phases: kickoffState.phases,
-                    milestones: kickoffState.milestones,
-                    totalBudget: kickoffState.phases.reduce(function(sum, p) { return sum + p.team.reduce(function(s, t) { return s + (Number(t.hours) || 0); }, 0); }, 0),
-                    notes: kickoffState.notes
-                };
-
-                const response = await fetch(API_URL + '/kickoff', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-                if (result.success || result.created > 0) {
-                    alert('Kickoff plan submitted!\n' + result.created + ' phase entries created.\n' + (kickoffState.saReviewer ? kickoffState.saReviewer + ' has been notified for review.' : ''));
-                    kickoffState.selectedAssessment = null;
-                    assessmentsData = null;
-                    dashboardData = null;
-                    pendingClientsData = null;
-                    document.getElementById('kickoffActionBar').style.display = 'none';
-                    loadKickoff();
-                } else {
-                    if (btn) { btn.disabled = false; btn.textContent = '🚀 Submit Kickoff Plan'; }
-                    alert('Kickoff submission failed:\n' + JSON.stringify(result.details || result));
-                }
-            } catch (e) {
-                alert('Error submitting kickoff: ' + e.message);
-                var btn2 = document.getElementById('kickoffSubmitBtn');
-                if (btn2) { btn2.disabled = false; btn2.textContent = '🚀 Submit Kickoff Plan'; }
-            }
-        }
-
-        // ==================== FINALIZE PROJECT ====================
-        async function finalizeProject(assessmentId) {
-            if (!confirm('Set this project as Active? Phase tracking will begin and Client Portal will be updated.')) return;
-            
-            try {
-                const response = await fetch(API_URL + '/assessments/' + assessmentId, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        status: 'Active',
-                        kickoffStatus: 'Complete'
-                    })
-                });
-                const result = await response.json();
-                if (result.success) {
-                    alert('Project is now Active! 🟢\nClient Portal has been updated — Softr will reflect this immediately.');
-                    assessmentsData = null;
-                    dashboardData = null;
-                    pendingClientsData = null;
-                    loadKickoff();
-                } else { 
-                    alert('Failed to set project active: ' + JSON.stringify(result));
-                }
-            } catch (e) { alert('Error: ' + e.message); }
-        }
-
-        // ==================== CLIENT PDF EXPORT ====================
-        async function exportKickoffPDF() {
-            const a = kickoffState.selectedAssessment;
-            if (!a) return;
-
-            const totalPlanned = kickoffState.phases.reduce((sum, p) => sum + p.team.reduce((s, t) => s + (Number(t.hours) || 0), 0), 0);
-
-            // Build a print-friendly HTML document
-            const phaseTableRows = kickoffState.phases.map(p => {
-                const phaseHrs = p.team.reduce((s, t) => s + (Number(t.hours) || 0), 0);
-                return `<tr>
-                    <td style="font-weight:600;color:#8B6914;">${p.name}</td>
-                    <td>${p.startDate ? new Date(p.startDate).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '-'}</td>
-                    <td>${p.endDate ? new Date(p.endDate).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '-'}</td>
-                    <td style="font-weight:600;">${phaseHrs}h</td>
-                    <td style="color:#666;font-size:11px;">${p.team.filter(t=>t.hours>0).map(t=>t.member.split(' ')[0]+': '+t.hours+'h').join(', ')}</td>
-                </tr>`;
-            }).join('');
-
-            const milestoneRows = [
-                { label: 'Concept Review', m: kickoffState.milestones.concept, color: '#4a90d9' },
-                { label: 'Midpoint Review (Tentative)', m: kickoffState.milestones.midpoint, color: '#d4a017' },
-                { label: 'Final Review', m: kickoffState.milestones.final, color: '#2e7d32' }
-            ].filter(ms => ms.m && ms.m.date).map(ms => `<tr>
-                <td><span style="display:inline-block;width:10px;height:10px;background:${ms.color};border-radius:2px;margin-right:6px;"></span>${ms.label}</td>
-                <td>${new Date(ms.m.date).toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'})}</td>
-                <td>${ms.m.notes || '-'}</td>
-            </tr>`).join('');
-
-            const pdfHTML = `
-            <div id="kickoffPdfContent" style="font-family:'Segoe UI',Roboto,sans-serif;max-width:800px;margin:0 auto;padding:40px;background:#fff;color:#222;">
-                <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #8B6914;padding-bottom:20px;margin-bottom:30px;">
-                    <div>
-                        <div style="font-size:28px;font-weight:700;color:#1a1a1a;">STUDIO RNB</div>
-                        <div style="font-size:12px;color:#888;letter-spacing:2px;margin-top:2px;">ARCHITECTURE & DESIGN</div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="font-size:18px;font-weight:600;color:#8B6914;">Project Kickoff Plan</div>
-                        <div style="color:#888;font-size:12px;">${new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'})}</div>
-                    </div>
-                </div>
-
-                <div style="background:#f8f6f0;border-radius:8px;padding:20px;margin-bottom:24px;">
-                    <div style="font-size:22px;font-weight:700;color:#1a1a1a;margin-bottom:8px;">${a.title || 'Untitled Project'}</div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;color:#555;font-size:13px;">
-                        <div><strong>Type:</strong> ${a.projectType || '-'}</div>
-                        <div><strong>Package:</strong> ${a.package || '-'}</div>
-                        <div><strong>Kickoff:</strong> ${kickoffState.kickoffDate ? new Date(kickoffState.kickoffDate).toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'}) : '-'}</div>
-                    </div>
-                </div>
-
-                <h3 style="font-size:16px;color:#8B6914;border-bottom:1px solid #ddd;padding-bottom:8px;margin:24px 0 12px;">Phase Timeline</h3>
-                <table style="width:100%;border-collapse:collapse;font-size:13px;">
-                    <tr style="background:#f5f5f5;"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Phase</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Start</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">End</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Hours</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Team</th></tr>
-                    ${phaseTableRows}
-                    <tr style="background:#f8f6f0;font-weight:700;"><td style="padding:8px 12px;">Total</td><td></td><td></td><td style="padding:8px 12px;color:#8B6914;">${totalPlanned}h</td><td></td></tr>
-                </table>
-
-                ${milestoneRows ? `
-                <h3 style="font-size:16px;color:#8B6914;border-bottom:1px solid #ddd;padding-bottom:8px;margin:24px 0 12px;">Key Milestones</h3>
-                <table style="width:100%;border-collapse:collapse;font-size:13px;">
-                    <tr style="background:#f5f5f5;"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Milestone</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Date</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Notes</th></tr>
-                    ${milestoneRows}
-                </table>` : ''}
-
-                <div style="margin-top:40px;padding-top:20px;border-top:1px solid #ddd;color:#999;font-size:11px;text-align:center;">
-                    Studio RNB • Architecture & Design • Generated ${new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'})}
-                </div>
-            </div>`;
-
-            // Create temporary element for pdf generation
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = pdfHTML;
-            document.body.appendChild(tempDiv);
-
-            const filename = `Studio_RNB_Kickoff_${(a.title || 'Project').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
-
-            if (typeof html2pdf !== 'undefined') {
-                try {
-                    await html2pdf().set({
-                        margin: [10, 10, 10, 10],
-                        filename: filename,
-                        image: { type: 'jpeg', quality: 0.98 },
-                        html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true },
-                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                    }).from(tempDiv.firstElementChild).save();
-                    document.body.removeChild(tempDiv);
-                } catch (err) {
-                    document.body.removeChild(tempDiv);
-                    // Fallback: open printable version
-                    openPrintableKickoff(pdfHTML, filename);
-                }
-            } else {
-                document.body.removeChild(tempDiv);
-                // Fallback: open in new window for printing
-                openPrintableKickoff(pdfHTML, filename);
-            }
-        }
-
-        function openPrintableKickoff(htmlContent, title) {
-            const win = window.open('', '_blank');
-            if (win) {
-                win.document.write('<!DOCTYPE html><html><head><title>' + title + '</title><style>body{margin:0;padding:0;}</style></head><body>' + htmlContent + '<scr' + 'ipt>setTimeout(function(){window.print();},500);</scr' + 'ipt></body></html>');
-                win.document.close();
-            } else {
-                alert('Please allow popups to export PDF.');
-            }
         }
 
         // ==================== HOUR REQUEST (on Dashboard) ====================
@@ -4231,13 +4210,7 @@
             if (defaultTab) switchTab(defaultTab);
             else loadDashboard();
 
-            // Wire up static kickoff action buttons
-            document.getElementById('kickoffSubmitBtn').addEventListener('click', function() {
-                submitKickoff(this);
-            });
-            document.getElementById('kickoffExportBtn').addEventListener('click', function() {
-                exportKickoffPDF();
-            });
+            // Kickoff buttons are wired via .onclick in renderKickoffForm()
         });
     </script>
 </body>
