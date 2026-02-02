@@ -3021,59 +3021,65 @@
 
         // ==================== SUBMIT KICKOFF ====================
         async function submitKickoff(btnEl) {
-            const a = kickoffState.selectedAssessment;
-            if (!a) return;
-
-            // Validate
-            if (!kickoffState.kickoffDate) { alert('Please set a kickoff meeting date.'); return; }
-            if (kickoffState.phases.length === 0) { alert('Please add at least one phase.'); return; }
-
-            const hasAnyDates = kickoffState.phases.some(p => p.startDate && p.endDate);
-            if (!hasAnyDates) { alert('Please set dates for at least one phase.'); return; }
-
-            if (!confirm(`Submit kickoff plan for "${a.title}"?\n\nThis will create ${kickoffState.phases.length} phase(s) in the Time Log and notify ${kickoffState.saReviewer || 'no SA'} for review.`)) return;
-
             try {
+                const a = kickoffState.selectedAssessment;
+                if (!a) { alert('No assessment selected. Please select a project first.'); return; }
+
+                // Validate
+                if (!kickoffState.kickoffDate) { alert('Please set a kickoff meeting date.'); return; }
+                if (kickoffState.phases.length === 0) { alert('Please add at least one phase.'); return; }
+
+                const hasAnyDates = kickoffState.phases.some(p => p.startDate && p.endDate);
+                if (!hasAnyDates) { alert('Please set dates for at least one phase.'); return; }
+
+                if (!confirm('Submit kickoff plan for "' + a.title + '"?\n\nThis will create ' + kickoffState.phases.length + ' phase(s) in the Time Log and notify ' + (kickoffState.saReviewer || 'no SA') + ' for review.')) return;
+
                 const btn = btnEl || document.getElementById('kickoffSubmitBtn');
                 if (btn) { btn.disabled = true; btn.textContent = '⏳ Creating...'; }
 
-                const response = await fetch(`${API_URL}/kickoff`, {
+                const payload = {
+                    assessmentId: a.id,
+                    clientName: a.title || a.clientName || 'Untitled',
+                    kickoffDate: kickoffState.kickoffDate,
+                    saReviewer: kickoffState.saReviewer,
+                    pmName: filterUser || 'Tammia Marcano',
+                    phases: kickoffState.phases,
+                    milestones: kickoffState.milestones,
+                    totalBudget: kickoffState.phases.reduce(function(sum, p) { return sum + p.team.reduce(function(s, t) { return s + (Number(t.hours) || 0); }, 0); }, 0),
+                    notes: kickoffState.notes
+                };
+
+                const response = await fetch(API_URL + '/kickoff', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        assessmentId: a.id,
-                        clientName: a.title || a.clientName || 'Untitled',
-                        kickoffDate: kickoffState.kickoffDate,
-                        saReviewer: kickoffState.saReviewer,
-                        pmName: filterUser || 'Tammia Marcano',
-                        phases: kickoffState.phases,
-                        milestones: kickoffState.milestones,
-                        totalBudget: kickoffState.phases.reduce((sum, p) => sum + p.team.reduce((s, t) => s + (Number(t.hours) || 0), 0), 0),
-                        notes: kickoffState.notes
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 const result = await response.json();
                 if (result.success || result.created > 0) {
-                    alert(`Kickoff plan submitted!\n${result.created} phase entries created.\n${kickoffState.saReviewer ? kickoffState.saReviewer + ' has been notified for review.' : ''}`);
+                    alert('Kickoff plan submitted!\n' + result.created + ' phase entries created.\n' + (kickoffState.saReviewer ? kickoffState.saReviewer + ' has been notified for review.' : ''));
                     kickoffState.selectedAssessment = null;
                     assessmentsData = null;
                     dashboardData = null;
+                    pendingClientsData = null;
                     loadKickoff();
                 } else {
-                    throw new Error(JSON.stringify(result.details?.errors || 'Unknown error'));
+                    if (btn) { btn.disabled = false; btn.textContent = '🚀 Submit Kickoff Plan'; }
+                    alert('Kickoff submission failed:\n' + JSON.stringify(result.details || result));
                 }
             } catch (e) {
-                alert('Error: ' + e.message);
+                alert('Error submitting kickoff: ' + e.message);
+                var btn2 = document.getElementById('kickoffSubmitBtn');
+                if (btn2) { btn2.disabled = false; btn2.textContent = '🚀 Submit Kickoff Plan'; }
             }
         }
 
         // ==================== FINALIZE PROJECT ====================
         async function finalizeProject(assessmentId) {
-            if (!confirm('Set this project as Active? Phase tracking will begin.')) return;
+            if (!confirm('Set this project as Active? Phase tracking will begin and Client Portal will be updated.')) return;
             
             try {
-                const response = await fetch(`${API_URL}/assessments/${assessmentId}`, {
+                const response = await fetch(API_URL + '/assessments/' + assessmentId, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -3083,11 +3089,14 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    alert('Project is now Active! 🟢');
+                    alert('Project is now Active! 🟢\nClient Portal has been updated — Softr will reflect this immediately.');
                     assessmentsData = null;
                     dashboardData = null;
+                    pendingClientsData = null;
                     loadKickoff();
-                } else { throw new Error('Failed'); }
+                } else { 
+                    alert('Failed to set project active: ' + JSON.stringify(result));
+                }
             } catch (e) { alert('Error: ' + e.message); }
         }
 
