@@ -2712,7 +2712,7 @@
 
                     <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
                         <button class="btn" onclick="exportKickoffPDF()" style="background:#333;">📄 Export Client PDF</button>
-                        <button class="btn btn-approve" onclick="submitKickoff()" style="padding:12px 24px;font-size:15px;">🚀 Submit Kickoff Plan</button>
+                        <button class="btn btn-approve" id="kickoffSubmitBtn" onclick="submitKickoff(this)" style="padding:12px 24px;font-size:15px;">🚀 Submit Kickoff Plan</button>
                     </div>
                 </div>`;
         }
@@ -2735,10 +2735,48 @@
         }
 
         function addPhase() {
-            const name = prompt('Phase name (e.g., SD, DD, CD, Permitting, Client Intake):');
-            if (!name) return;
+            // Show inline phase name picker instead of prompt()
+            const phaseOptions = ['SD', 'DD', 'CD', 'Permitting', 'Client Intake', 'Construction Admin'];
+            const existing = kickoffState.phases.map(p => p.name);
+            const available = phaseOptions.filter(p => !existing.includes(p));
+
+            if (available.length === 0) {
+                // All standard phases added, allow custom
+                const customName = window.prompt ? window.prompt('All standard phases exist. Enter custom phase name:') : null;
+                if (!customName) return;
+                const team = kickoffState.team ? kickoffState.team.map(t => ({ member: t.member, hours: 0 })) : [];
+                kickoffState.phases.push({ name: customName.trim(), startDate: '', endDate: '', team });
+                renderKickoffForm();
+                return;
+            }
+
+            // Build quick picker overlay
+            const picker = document.createElement('div');
+            picker.id = 'phasePicker';
+            picker.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;';
+            picker.innerHTML = `<div style="background:#1E1E1E;border:1px solid #333;border-radius:12px;padding:24px;min-width:300px;">
+                <div style="font-size:16px;font-weight:600;margin-bottom:16px;color:#C9A227;">Add Phase</div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    ${available.map(p => `<button onclick="selectPhase('${p}')" style="background:#2A2A2A;border:1px solid #333;color:#ccc;padding:10px 16px;border-radius:8px;cursor:pointer;text-align:left;font-size:14px;">${p}</button>`).join('')}
+                    <button onclick="selectPhase('__custom__')" style="background:#2A2A2A;border:1px solid #444;color:#888;padding:10px 16px;border-radius:8px;cursor:pointer;text-align:left;font-size:13px;">✏️ Custom phase name...</button>
+                </div>
+                <button onclick="document.getElementById('phasePicker').remove()" style="margin-top:12px;background:none;border:none;color:#888;cursor:pointer;font-size:12px;width:100%;text-align:center;">Cancel</button>
+            </div>`;
+            document.body.appendChild(picker);
+        }
+
+        function selectPhase(name) {
+            const picker = document.getElementById('phasePicker');
+            if (picker) picker.remove();
+            
+            if (name === '__custom__') {
+                const customName = window.prompt ? window.prompt('Enter phase name:') : null;
+                if (!customName) return;
+                name = customName.trim();
+            }
+            
             const team = kickoffState.team ? kickoffState.team.map(t => ({ member: t.member, hours: 0 })) : [];
-            kickoffState.phases.push({ name: name.trim(), startDate: '', endDate: '', team });
+            kickoffState.phases.push({ name, startDate: '', endDate: '', team });
             renderKickoffForm();
         }
 
@@ -2749,9 +2787,45 @@
 
         function addTeamToPhase(phaseIdx) {
             const allStaff = staffData?.staff || [];
-            const name = prompt('Team member name:');
-            if (!name) return;
-            kickoffState.phases[phaseIdx].team.push({ member: name.trim(), hours: 0 });
+            
+            // Build staff picker overlay instead of prompt()
+            const picker = document.createElement('div');
+            picker.id = 'teamPicker';
+            picker.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;';
+            
+            const existingInPhase = kickoffState.phases[phaseIdx].team.map(t => t.member.toLowerCase());
+            const staffList = allStaff.filter(s => !existingInPhase.includes(s.name.toLowerCase()));
+            
+            picker.innerHTML = `<div style="background:#1E1E1E;border:1px solid #333;border-radius:12px;padding:24px;min-width:320px;max-height:80vh;overflow-y:auto;">
+                <div style="font-size:16px;font-weight:600;margin-bottom:16px;color:#C9A227;">Add Team Member to ${kickoffState.phases[phaseIdx].name}</div>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    ${staffList.length > 0 ? staffList.map(s => `<button onclick="selectTeamForPhase(${phaseIdx}, '${s.name.replace(/'/g, "\\'")}')" style="background:#2A2A2A;border:1px solid #333;color:#ccc;padding:10px 16px;border-radius:8px;cursor:pointer;text-align:left;font-size:13px;display:flex;justify-content:space-between;">
+                        <span>${s.name}</span><span style="color:#888;font-size:11px;">${s.role || ''}</span>
+                    </button>`).join('') : '<div style="color:#888;padding:10px;">No staff loaded. Loading...</div>'}
+                    <button onclick="selectTeamForPhase(${phaseIdx}, '__custom__')" style="background:#2A2A2A;border:1px solid #444;color:#888;padding:10px 16px;border-radius:8px;cursor:pointer;text-align:left;font-size:13px;">✏️ Enter name manually...</button>
+                </div>
+                <button onclick="document.getElementById('teamPicker').remove()" style="margin-top:12px;background:none;border:none;color:#888;cursor:pointer;font-size:12px;width:100%;text-align:center;">Cancel</button>
+            </div>`;
+            document.body.appendChild(picker);
+            
+            // Make sure staff is loaded
+            if (allStaff.length === 0) {
+                loadStaff().then(() => addTeamToPhase(phaseIdx));
+                picker.remove();
+            }
+        }
+
+        function selectTeamForPhase(phaseIdx, name) {
+            const picker = document.getElementById('teamPicker');
+            if (picker) picker.remove();
+            
+            if (name === '__custom__') {
+                const customName = window.prompt ? window.prompt('Enter team member name:') : null;
+                if (!customName) return;
+                name = customName.trim();
+            }
+            
+            kickoffState.phases[phaseIdx].team.push({ member: name, hours: 0 });
             renderKickoffForm();
         }
 
@@ -2946,7 +3020,7 @@
         }
 
         // ==================== SUBMIT KICKOFF ====================
-        async function submitKickoff() {
+        async function submitKickoff(btnEl) {
             const a = kickoffState.selectedAssessment;
             if (!a) return;
 
@@ -2960,9 +3034,8 @@
             if (!confirm(`Submit kickoff plan for "${a.title}"?\n\nThis will create ${kickoffState.phases.length} phase(s) in the Time Log and notify ${kickoffState.saReviewer || 'no SA'} for review.`)) return;
 
             try {
-                const btn = event.target;
-                btn.disabled = true;
-                btn.textContent = '⏳ Creating...';
+                const btn = btnEl || document.getElementById('kickoffSubmitBtn');
+                if (btn) { btn.disabled = true; btn.textContent = '⏳ Creating...'; }
 
                 const response = await fetch(`${API_URL}/kickoff`, {
                     method: 'POST',
@@ -3019,7 +3092,7 @@
         }
 
         // ==================== CLIENT PDF EXPORT ====================
-        function exportKickoffPDF() {
+        async function exportKickoffPDF() {
             const a = kickoffState.selectedAssessment;
             if (!a) return;
 
@@ -3093,19 +3166,37 @@
             tempDiv.innerHTML = pdfHTML;
             document.body.appendChild(tempDiv);
 
+            const filename = `Studio_RNB_Kickoff_${(a.title || 'Project').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+
             if (typeof html2pdf !== 'undefined') {
-                html2pdf().set({
-                    margin: [10, 10, 10, 10],
-                    filename: `Studio_RNB_Kickoff_${(a.title || 'Project').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                }).from(tempDiv.firstElementChild).save().then(() => {
+                try {
+                    await html2pdf().set({
+                        margin: [10, 10, 10, 10],
+                        filename: filename,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    }).from(tempDiv.firstElementChild).save();
                     document.body.removeChild(tempDiv);
-                });
+                } catch (err) {
+                    document.body.removeChild(tempDiv);
+                    // Fallback: open printable version
+                    openPrintableKickoff(pdfHTML, filename);
+                }
             } else {
-                alert('PDF export loading... please try again.');
                 document.body.removeChild(tempDiv);
+                // Fallback: open in new window for printing
+                openPrintableKickoff(pdfHTML, filename);
+            }
+        }
+
+        function openPrintableKickoff(htmlContent, title) {
+            const win = window.open('', '_blank');
+            if (win) {
+                win.document.write('<!DOCTYPE html><html><head><title>' + title + '</title><style>body{margin:0;padding:0;}</style></head><body>' + htmlContent + '<scr' + 'ipt>setTimeout(function(){window.print();},500);</scr' + 'ipt></body></html>');
+                win.document.close();
+            } else {
+                alert('Please allow popups to export PDF.');
             }
         }
 
