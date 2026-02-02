@@ -864,7 +864,11 @@
             <form id="assessmentForm" onsubmit="submitAssessment(event)">
                 <div class="form-group">
                     <label class="form-label">Client Name *</label>
-                    <input type="text" class="form-input" id="assessClientName" required placeholder="Enter client name">
+                    <select class="form-select" id="assessClientName" required>
+                        <option value="">-- Select Client --</option>
+                    </select>
+                    <input type="hidden" id="assessClientPortalId" value="">
+                    <div style="font-size:11px;color:#888;margin-top:4px;">Clients appear here from the Softr intake form. <span id="pendingClientCount" style="color:#C9A227;"></span></div>
                 </div>
 
                 <div class="form-section-title">Project Snapshot</div>
@@ -1154,7 +1158,7 @@
                 seesAllProjects: false,
                 seesTeamWorkload: false,
                 seesBudgetAlerts: false,
-                notifications: ['revision_requested', 'assessment_declined', 'assessment_approved']
+                notifications: ['new_client_intake', 'revision_requested', 'assessment_declined', 'assessment_approved']
             },
             // Client Solutions read-only (Johnathon): assessments read-only
             clientSolutionsReadonly: {
@@ -1432,6 +1436,8 @@
         }
 
         // ==================== NOTIFICATION BUILDER ====================
+        let pendingClientsData = null;
+
         function buildNotificationAlerts() {
             const role = getUserRole();
             const roleName = getUserRoleName();
@@ -1440,6 +1446,14 @@
             const assessments = assessmentsData?.assessments || [];
             const today = new Date();
             const dayOfWeek = today.getDay(); // 0=Sun, 5=Fri
+
+            // 🔔 Samuel + Leadership: New clients from intake form needing assessment
+            if (role.notifications.includes('new_client_intake') || role.notifications.includes('pending_approvals')) {
+                if (pendingClientsData && pendingClientsData.pendingClients && pendingClientsData.pendingClients.length > 0) {
+                    const pc = pendingClientsData.pendingClients;
+                    alerts += `<div class="alert-banner" style="background:rgba(201,162,39,0.1);border-color:rgba(201,162,39,0.3);cursor:pointer;" onclick="switchTab('assessments')"><span class="alert-icon">🆕</span><div class="alert-content"><div class="alert-title" style="color:#C9A227;">${pc.length} New Client${pc.length > 1 ? 's' : ''} Need${pc.length === 1 ? 's' : ''} Assessment</div><div class="alert-text">${pc.map(c => c.name).join(', ')} — <span style="color:#C9A227;">Open Assessments tab →</span></div></div></div>`;
+                }
+            }
 
             // 🔔 Leadership: Pending approvals
             if (role.notifications.includes('pending_approvals')) {
@@ -1638,6 +1652,13 @@
                     fetch(`${API_URL}/assessments`).then(r => r.json()).then(data => {
                         assessmentsData = data;
                         renderDashboard(); // Re-render with notification alerts
+                    }).catch(() => {});
+                }
+                // Load pending clients in background for Samuel's new intake alerts
+                if (!pendingClientsData) {
+                    fetch(`${API_URL}/clients/pending`).then(r => r.json()).then(data => {
+                        pendingClientsData = data;
+                        renderDashboard(); // Re-render with new client alerts
                     }).catch(() => {});
                 }
             } catch (error) {
@@ -1927,6 +1948,34 @@
             const role = getUserRole();
             const assessments = assessmentsData?.assessments || [];
 
+            // Build new intake clients banner for Samuel
+            let intakeBanner = '';
+            if (role.canSubmitAssessments && pendingClientsData && pendingClientsData.pendingClients && pendingClientsData.pendingClients.length > 0) {
+                const pc = pendingClientsData.pendingClients;
+                intakeBanner = `<div class="alert-banner" style="background:rgba(201,162,39,0.1);border-color:rgba(201,162,39,0.3);margin-bottom:16px;">
+                    <span class="alert-icon">🆕</span>
+                    <div class="alert-content">
+                        <div class="alert-title" style="color:#C9A227;">${pc.length} New Client Intake${pc.length > 1 ? 's' : ''} — Ready for Assessment</div>
+                        <div class="alert-text" style="margin-top:4px;">
+                            ${pc.map(c => `<div style="display:inline-flex;align-items:center;gap:6px;margin:2px 8px 2px 0;padding:4px 10px;background:rgba(201,162,39,0.1);border-radius:6px;font-size:12px;">
+                                <strong style="color:#C9A227;">${c.name}</strong>
+                                ${c.email ? `<span style="color:#888;">· ${c.email}</span>` : ''}
+                                ${c.projectType ? `<span class="phase-tag" style="font-size:10px;">${c.projectType}</span>` : ''}
+                                <button class="action-btn small" onclick="openAssessmentModal()" style="margin-left:4px;font-size:10px;">📋 Assess</button>
+                            </div>`).join('')}
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            // Also fetch pending clients if not loaded yet
+            if (role.canSubmitAssessments && !pendingClientsData) {
+                fetch(`${API_URL}/clients/pending`).then(r => r.json()).then(data => {
+                    pendingClientsData = data;
+                    renderAssessmentsTab();
+                }).catch(() => {});
+            }
+
             let tableRows = '';
             if (assessments.length > 0) {
                 tableRows = assessments.map(a => {
@@ -1954,9 +2003,10 @@
                     <div class="header-left"><h1>📋 Assessments</h1><span class="badge user-badge">${userName}'s View</span></div>
                     <div class="header-actions">
                         ${submitBtn}
-                        <button class="btn" onclick="assessmentsData=null;loadAssessments()">🔄 Refresh</button>
+                        <button class="btn" onclick="assessmentsData=null;pendingClientsData=null;loadAssessments()">🔄 Refresh</button>
                     </div>
                 </div>
+                ${intakeBanner}
                 ${assessments.length > 0 ? `
                 <div class="summary-cards">
                     <div class="card"><div class="card-label">Total Assessments</div><div class="card-value gold">${assessments.length}</div></div>
@@ -2127,6 +2177,46 @@
             document.querySelectorAll('[id$="Custom"]').forEach(el => { el.style.display = 'none'; el.value = ''; });
             openModal('assessmentModal');
 
+            // Populate client dropdown from Client Portal (New Lead + Client Intake)
+            const select = document.getElementById('assessClientName');
+            select.innerHTML = '<option value="">⏳ Loading clients...</option>';
+            document.getElementById('assessClientPortalId').value = '';
+
+            fetch(`${API_URL}/clients/pending`).then(r => r.json()).then(data => {
+                const clients = data.pendingClients || [];
+                let options = '<option value="">-- Select Client --</option>';
+                if (clients.length > 0) {
+                    clients.forEach(c => {
+                        const detail = [c.projectType, c.address].filter(Boolean).join(' • ');
+                        options += `<option value="${c.name}" data-id="${c.id}" data-email="${c.email||''}" data-desc="${(c.projectDescription||'').replace(/"/g,'&quot;')}" data-services="${(c.servicesRequested||'').replace(/"/g,'&quot;')}">${c.name}${detail ? ' — ' + detail : ''}</option>`;
+                    });
+                }
+                options += '<option value="__manual__">✏️ Enter name manually...</option>';
+                select.innerHTML = options;
+                document.getElementById('pendingClientCount').textContent = clients.length > 0 ? `${clients.length} new intake client${clients.length > 1 ? 's' : ''} waiting` : '';
+
+                // When client selected, store portal ID and pre-fill description
+                select.onchange = function() {
+                    const opt = select.selectedOptions[0];
+                    if (select.value === '__manual__') {
+                        select.style.display = 'none';
+                        const manualInput = document.createElement('input');
+                        manualInput.type = 'text';
+                        manualInput.className = 'form-input';
+                        manualInput.id = 'assessClientNameManual';
+                        manualInput.placeholder = 'Type client name...';
+                        manualInput.required = true;
+                        select.parentElement.insertBefore(manualInput, select.nextSibling);
+                        document.getElementById('assessClientPortalId').value = '';
+                        manualInput.focus();
+                    } else if (opt) {
+                        document.getElementById('assessClientPortalId').value = opt.dataset.id || '';
+                    }
+                };
+            }).catch(() => {
+                select.innerHTML = '<option value="">-- Type client name below --</option><option value="__manual__">✏️ Enter name manually...</option>';
+            });
+
             // Load staff and populate dropdowns
             loadStaff().then(() => populateStaffDropdowns());
         }
@@ -2144,8 +2234,14 @@
 
             const today = new Date().toISOString().split('T')[0];
 
+            const manualInput = document.getElementById('assessClientNameManual');
+            const clientSelect = document.getElementById('assessClientName');
+            const clientName = manualInput ? manualInput.value : clientSelect.value;
+            const clientPortalId = document.getElementById('assessClientPortalId').value;
+
             const body = {
-                title: document.getElementById('assessClientName').value,
+                title: clientName,
+                clientPortalId: clientPortalId || undefined,
                 assessmentDate: today,
                 completedBy: filterUser || 'Samuel Crook',
                 projectType: document.getElementById('assessProjectType').value,
@@ -3563,7 +3659,10 @@
 
                     <div class="form-section-title">Project Info (visible on Softr)</div>
                     <div class="form-row">
-                        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="ecStatus"><option ${c.status==='Active'?'selected':''}>Active</option><option ${c.status==='Prospect'?'selected':''}>Prospect</option><option ${c.status==='Inactive'?'selected':''}>Inactive</option><option ${c.status==='Complete'?'selected':''}>Complete</option></select></div>
+                        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="ecStatus"><option ${c.status==='New Lead'?'selected':''}>New Lead</option><option ${c.status==='Active'?'selected':''}>Active</option><option ${c.status==='Paused'?'selected':''}>Paused</option><option ${c.status==='Completed'?'selected':''}>Completed</option></select></div>
+                        <div class="form-group"><label class="form-label">Team</label><select class="form-select" id="ecTeam"><option value="">-- Select --</option><option ${c.team==='Client Intake'?'selected':''}>Client Intake</option><option ${c.team==='Design'?'selected':''}>Design</option><option ${c.team==='Permitting'?'selected':''}>Permitting</option><option ${c.team==='Project Management'?'selected':''}>Project Management</option></select></div>
+                    </div>
+                    <div class="form-row">
                         <div class="form-group"><label class="form-label">Project Type</label><select class="form-select" id="ecType"><option value="">-- Select --</option><option ${c.projectType==='New Build'?'selected':''}>New Build</option><option ${c.projectType==='Addition'?'selected':''}>Addition</option><option ${c.projectType==='Renovation'?'selected':''}>Renovation</option><option ${c.projectType==='Commercial'?'selected':''}>Commercial</option><option ${c.projectType==='Site Survey'?'selected':''}>Site Survey</option></select></div>
                     </div>
                     <div class="form-group"><label class="form-label">Project Description</label><textarea class="form-textarea" id="ecDesc">${c.projectDescription||''}</textarea></div>
@@ -3648,6 +3747,7 @@
                         address: document.getElementById('ecAddress').value,
                         county: document.getElementById('ecCounty').value,
                         status: document.getElementById('ecStatus').value,
+                        team: document.getElementById('ecTeam').value || undefined,
                         projectType: document.getElementById('ecType').value,
                         projectDescription: document.getElementById('ecDesc').value,
                         projectProgress: document.getElementById('ecProgress').value,
