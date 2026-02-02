@@ -770,6 +770,13 @@
             <p>Loading kickoff data...</p>
         </div>
     </div>
+    <!-- Static kickoff action buttons - outside dynamic innerHTML -->
+    <div id="kickoffActionBar" style="display:none;padding:16px 24px;border-top:1px solid #333;background:#141414;position:sticky;bottom:0;z-index:100;">
+        <div style="display:flex;gap:12px;justify-content:flex-end;max-width:1200px;margin:0 auto;">
+            <button class="btn" id="kickoffExportBtn" style="background:#333;">📄 Export Client PDF</button>
+            <button class="btn btn-approve" id="kickoffSubmitBtn" style="padding:12px 24px;font-size:15px;">🚀 Submit Kickoff Plan</button>
+        </div>
+    </div>
 
     <!-- TAB: PROJECTS -->
     <div class="tab-content" id="tab-projects">
@@ -1563,6 +1570,12 @@
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
             document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            // Hide kickoff action bar when leaving kickoff tab
+            if (tabName !== 'kickoff') {
+                var kBar = document.getElementById('kickoffActionBar');
+                if (kBar) kBar.style.display = 'none';
+            }
 
             // Load data for tab if needed
             if (tabName === 'dashboard' || tabName === 'time') loadDashboard();
@@ -2711,22 +2724,12 @@
                     </div>
 
                     <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
-                        <button class="btn" id="kickoffExportBtn" style="background:#333;">📄 Export Client PDF</button>
-                        <button class="btn btn-approve" id="kickoffSubmitBtn" style="padding:12px 24px;font-size:15px;">🚀 Submit Kickoff Plan</button>
+                        <div style="color:#666;font-size:12px;align-self:center;">Use buttons at bottom of screen ↓</div>
                     </div>
                 </div>`;
 
-            // Attach event listeners AFTER innerHTML is set
-            setTimeout(function() {
-                var submitBtn = document.getElementById('kickoffSubmitBtn');
-                var exportBtn = document.getElementById('kickoffExportBtn');
-                if (submitBtn) {
-                    submitBtn.addEventListener('click', function() { submitKickoff(submitBtn); });
-                }
-                if (exportBtn) {
-                    exportBtn.addEventListener('click', function() { exportKickoffPDF(); });
-                }
-            }, 50);
+            // Show the static action bar
+            document.getElementById('kickoffActionBar').style.display = 'block';
         }
 
         // ==================== KICKOFF FORM HELPERS ====================
@@ -2845,6 +2848,7 @@
             kickoffState.selectedAssessment = null;
             document.getElementById('kickoffFormArea').style.display = 'none';
             document.getElementById('kickoffFormArea').innerHTML = '';
+            document.getElementById('kickoffActionBar').style.display = 'none';
         }
 
         // ==================== GANTT CHART BUILDER ====================
@@ -3074,6 +3078,7 @@
                     assessmentsData = null;
                     dashboardData = null;
                     pendingClientsData = null;
+                    document.getElementById('kickoffActionBar').style.display = 'none';
                     loadKickoff();
                 } else {
                     if (btn) { btn.disabled = false; btn.textContent = '🚀 Submit Kickoff Plan'; }
@@ -4224,6 +4229,14 @@
             setupTabs();
             if (defaultTab) switchTab(defaultTab);
             else loadDashboard();
+
+            // Wire up static kickoff action buttons
+            document.getElementById('kickoffSubmitBtn').addEventListener('click', function() {
+                submitKickoff(this);
+            });
+            document.getElementById('kickoffExportBtn').addEventListener('click', function() {
+                exportKickoffPDF();
+            });
         });
     </script>
 </body>
