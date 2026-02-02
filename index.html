@@ -2711,10 +2711,22 @@
                     </div>
 
                     <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
-                        <button class="btn" onclick="exportKickoffPDF()" style="background:#333;">📄 Export Client PDF</button>
-                        <button class="btn btn-approve" id="kickoffSubmitBtn" onclick="submitKickoff(this)" style="padding:12px 24px;font-size:15px;">🚀 Submit Kickoff Plan</button>
+                        <button class="btn" id="kickoffExportBtn" style="background:#333;">📄 Export Client PDF</button>
+                        <button class="btn btn-approve" id="kickoffSubmitBtn" style="padding:12px 24px;font-size:15px;">🚀 Submit Kickoff Plan</button>
                     </div>
                 </div>`;
+
+            // Attach event listeners AFTER innerHTML is set
+            setTimeout(function() {
+                var submitBtn = document.getElementById('kickoffSubmitBtn');
+                var exportBtn = document.getElementById('kickoffExportBtn');
+                if (submitBtn) {
+                    submitBtn.addEventListener('click', function() { submitKickoff(submitBtn); });
+                }
+                if (exportBtn) {
+                    exportBtn.addEventListener('click', function() { exportKickoffPDF(); });
+                }
+            }, 50);
         }
 
         // ==================== KICKOFF FORM HELPERS ====================
