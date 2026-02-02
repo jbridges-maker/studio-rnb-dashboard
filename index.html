@@ -775,15 +775,14 @@
                     </div>
                 </div>
 
-                <div class="form-section-title">Team & Hours</div>
+                <div class="form-section-title">Team & Hours <span id="staffLoadStatus" style="font-size:11px;color:#4CAF50;font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
                 <div class="form-team-row">
                     <div class="form-group">
                         <label class="form-label">Lead Architect</label>
                         <select class="form-select" id="assessLeadArch">
-                            <option value="">-- Select --</option>
-                            <option>Young Yoon</option>
-                            <option>Shaguni Gupta</option>
+                            <option value="">-- Loading staff... --</option>
                         </select>
+                        <input type="text" class="form-input" id="assessLeadArchCustom" placeholder="Or type a name..." style="margin-top:6px;display:none;">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Hours</label>
@@ -794,9 +793,9 @@
                     <div class="form-group">
                         <label class="form-label">Senior PM</label>
                         <select class="form-select" id="assessSPM">
-                            <option value="">-- Select --</option>
-                            <option>Tammia Marcano</option>
+                            <option value="">-- Loading staff... --</option>
                         </select>
+                        <input type="text" class="form-input" id="assessSPMCustom" placeholder="Or type a name..." style="margin-top:6px;display:none;">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Hours</label>
@@ -807,9 +806,9 @@
                     <div class="form-group">
                         <label class="form-label">Assistant PM</label>
                         <select class="form-select" id="assessAPM">
-                            <option value="">-- Select --</option>
-                            <option>Emma Fernandez</option>
+                            <option value="">-- Loading staff... --</option>
                         </select>
+                        <input type="text" class="form-input" id="assessAPMCustom" placeholder="Or type a name..." style="margin-top:6px;display:none;">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Hours</label>
@@ -820,9 +819,9 @@
                     <div class="form-group">
                         <label class="form-label">BIM / VDC</label>
                         <select class="form-select" id="assessBIM">
-                            <option value="">-- Select --</option>
-                            <option>John Gil Corzo</option>
+                            <option value="">-- Loading staff... --</option>
                         </select>
+                        <input type="text" class="form-input" id="assessBIMCustom" placeholder="Or type a name..." style="margin-top:6px;display:none;">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Hours</label>
@@ -833,9 +832,9 @@
                     <div class="form-group">
                         <label class="form-label">Coordinator</label>
                         <select class="form-select" id="assessCoord">
-                            <option value="">-- Select --</option>
-                            <option>Melissa Galeano</option>
+                            <option value="">-- Loading staff... --</option>
                         </select>
+                        <input type="text" class="form-input" id="assessCoordCustom" placeholder="Or type a name..." style="margin-top:6px;display:none;">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Hours</label>
@@ -896,7 +895,115 @@
         let filteredData = null;
         let assessmentsData = null;
         let clientsData = null;
+        let staffData = null;
         let currentTab = defaultTab || 'dashboard';
+
+        // Role to form field mapping
+        const ROLE_FIELD_MAP = {
+            'Lead Architect': 'assessLeadArch',
+            'Senior Architect': 'assessLeadArch',
+            'Senior PM': 'assessSPM',
+            'Assistant PM': 'assessAPM',
+            'BIM Manager': 'assessBIM',
+            'BIM Coordinator': 'assessCoord',
+            'Coordinator': 'assessCoord'
+        };
+
+        // ==================== LOAD STAFF ====================
+        async function loadStaff() {
+            if (staffData) return staffData;
+            try {
+                const response = await fetch(`${API_URL}/staff`);
+                if (!response.ok) throw new Error(`Staff API Error: ${response.status}`);
+                staffData = await response.json();
+                return staffData;
+            } catch (error) {
+                console.error('Failed to load staff:', error);
+                return null;
+            }
+        }
+
+        function populateStaffDropdowns() {
+            if (!staffData?.staff) return;
+
+            const roleMap = {
+                'assessLeadArch': ['Lead Architect', 'Senior Architect'],
+                'assessSPM': ['Senior PM'],
+                'assessAPM': ['Assistant PM'],
+                'assessBIM': ['BIM Manager', 'BIM VDC', 'BIM-VDC'],
+                'assessCoord': ['BIM Coordinator', 'Coordinator']
+            };
+
+            Object.entries(roleMap).forEach(([selectId, roles]) => {
+                const select = document.getElementById(selectId);
+                const customInput = document.getElementById(selectId + 'Custom');
+                if (!select) return;
+
+                // Find matching staff
+                const matching = staffData.staff.filter(s => 
+                    roles.some(r => s.role && s.role.toLowerCase().includes(r.toLowerCase()))
+                );
+
+                // Also include all staff as "Other" options
+                const allStaff = staffData.staff.filter(s => 
+                    !matching.find(m => m.name === s.name)
+                );
+
+                select.innerHTML = '<option value="">-- Select --</option>';
+                
+                // Add role-matched staff first
+                matching.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.name;
+                    opt.textContent = s.name;
+                    select.appendChild(opt);
+                });
+
+                // Add separator + other staff
+                if (allStaff.length > 0 && matching.length > 0) {
+                    const sep = document.createElement('option');
+                    sep.disabled = true;
+                    sep.textContent = '── Other Team Members ──';
+                    select.appendChild(sep);
+                }
+                allStaff.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.name;
+                    opt.textContent = `${s.name} (${s.role || 'No role'})`;
+                    select.appendChild(opt);
+                });
+
+                // Add "Custom / Other" option
+                const customOpt = document.createElement('option');
+                customOpt.value = '__custom__';
+                customOpt.textContent = '✏️ Type a custom name...';
+                select.appendChild(customOpt);
+
+                // Toggle custom input
+                select.addEventListener('change', () => {
+                    if (select.value === '__custom__') {
+                        customInput.style.display = 'block';
+                        customInput.focus();
+                    } else {
+                        customInput.style.display = 'none';
+                        customInput.value = '';
+                    }
+                });
+            });
+
+            // Update status
+            const status = document.getElementById('staffLoadStatus');
+            if (status) status.textContent = `✓ ${staffData.staff.length} team members loaded`;
+        }
+
+        function getTeamFieldValue(selectId) {
+            const select = document.getElementById(selectId);
+            const custom = document.getElementById(selectId + 'Custom');
+            if (select && select.value === '__custom__' && custom) {
+                return custom.value || '';
+            }
+            return select ? select.value : '';
+        }
 
         // ==================== TAB SYSTEM ====================
         function switchTab(tabName) {
@@ -982,6 +1089,13 @@
                 applyFilters();
                 renderDashboard();
                 renderTimeTab();
+                // Load assessments in background for notification alerts
+                if (!assessmentsData) {
+                    fetch(`${API_URL}/assessments`).then(r => r.json()).then(data => {
+                        assessmentsData = data;
+                        renderDashboard(); // Re-render with notification alerts
+                    }).catch(() => {});
+                }
             } catch (error) {
                 document.getElementById('tab-dashboard').innerHTML = `
                     <div class="header"><div class="header-left"><h1>📊 Studio RNB Dashboard</h1></div>
@@ -1114,6 +1228,31 @@
             }
             if (data.dueSoonTasks > 0) {
                 alertsHTML += `<div class="alert-banner warning"><span class="alert-icon">⚠️</span><div class="alert-content"><div class="alert-title">${data.dueSoonTasks} Task${data.dueSoonTasks > 1 ? 's' : ''} Due Soon</div><div class="alert-text">Due within the next 3 days</div></div></div>`;
+            }
+
+            // PM notification: check for approved assessments needing kickoff
+            if (assessmentsData?.assessments) {
+                const approvedNeedingKickoff = assessmentsData.assessments.filter(a => 
+                    a.status === 'Approved' && (!a.kickoffStatus || a.kickoffStatus === 'Not Scheduled')
+                );
+                // Show to PMs or if no user filter (leadership sees all)
+                const userLower = (filterUser || '').toLowerCase();
+                const isPM = userLower.includes('tammia') || userLower.includes('emma') || !filterUser;
+                
+                if (approvedNeedingKickoff.length > 0 && isPM) {
+                    // If user-filtered, only show assessments where they're the Senior PM
+                    let relevant = approvedNeedingKickoff;
+                    if (filterUser) {
+                        relevant = approvedNeedingKickoff.filter(a => 
+                            (a.seniorPM || '').toLowerCase().includes(userLower) ||
+                            (a.assistantPM || '').toLowerCase().includes(userLower)
+                        );
+                    }
+                    if (relevant.length > 0) {
+                        const names = relevant.map(a => a.title || 'Untitled').join(', ');
+                        alertsHTML += `<div class="alert-banner" style="background:rgba(139,92,246,0.1);border-color:rgba(139,92,246,0.3);"><span class="alert-icon">🔔</span><div class="alert-content"><div class="alert-title" style="color:#8B5CF6;">${relevant.length} Assessment${relevant.length > 1 ? 's' : ''} Approved — Ready for Kickoff</div><div class="alert-text">${names} — <a href="#" onclick="switchTab('approvals');return false;" style="color:#C9A227;">Schedule kickoff →</a></div></div></div>`;
+                    }
+                }
             }
             
             // Budget alerts (Senior PM + Leadership)
@@ -1410,7 +1549,12 @@
             document.getElementById('assessFormError').style.display = 'none';
             document.getElementById('assessSubmitBtn').disabled = false;
             document.getElementById('assessSubmitBtn').textContent = '📤 Submit for Approval';
+            // Hide all custom inputs
+            document.querySelectorAll('[id$="Custom"]').forEach(el => { el.style.display = 'none'; el.value = ''; });
             openModal('assessmentModal');
+
+            // Load staff and populate dropdowns
+            loadStaff().then(() => populateStaffDropdowns());
         }
 
         async function submitAssessment(event) {
@@ -1443,15 +1587,15 @@
                 deliveryWindow: document.getElementById('assessDeliveryWindow').value || undefined,
                 capacityStatus: document.getElementById('assessCapacity').value || undefined,
                 stressLevel: document.getElementById('assessStress').value || undefined,
-                leadArchitect: document.getElementById('assessLeadArch').value || undefined,
+                leadArchitect: getTeamFieldValue('assessLeadArch') || undefined,
                 leadArchitectHours: document.getElementById('assessLeadArchHrs').value || 0,
-                seniorPM: document.getElementById('assessSPM').value || undefined,
+                seniorPM: getTeamFieldValue('assessSPM') || undefined,
                 seniorPMHours: document.getElementById('assessSPMHrs').value || 0,
-                assistantPM: document.getElementById('assessAPM').value || undefined,
+                assistantPM: getTeamFieldValue('assessAPM') || undefined,
                 assistantPMHours: document.getElementById('assessAPMHrs').value || 0,
-                bimVdc: document.getElementById('assessBIM').value || undefined,
+                bimVdc: getTeamFieldValue('assessBIM') || undefined,
                 bimVdcHours: document.getElementById('assessBIMHrs').value || 0,
-                coordinator: document.getElementById('assessCoord').value || undefined,
+                coordinator: getTeamFieldValue('assessCoord') || undefined,
                 coordinatorHours: document.getElementById('assessCoordHrs').value || 0,
                 leadershipHours: document.getElementById('assessLeadershipHrs').value || 0,
                 feeFloor: document.getElementById('assessFeeFloor').value,
