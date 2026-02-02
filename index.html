@@ -557,8 +557,14 @@
     <nav class="tab-nav" id="tabNav">
         <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
         <button class="tab-btn" data-tab="time" onclick="switchTab('time')">⏱️ Time</button>
-        <button class="tab-btn" data-tab="assessments" onclick="switchTab('assessments')">📋 Assessments</button>
-        <button class="tab-btn" data-tab="approvals" onclick="switchTab('approvals')">✅ Approvals <span class="tab-badge" id="approvalsBadge" style="display:none">0</span></button>
+        <button class="tab-btn" data-tab="assessments" onclick="switchTab('assessments')" id="tabBtnAssessments" style="display:none">📋 Assessments</button>
+        <button class="tab-btn" data-tab="approvals" onclick="switchTab('approvals')" id="tabBtnApprovals" style="display:none">✅ Approvals <span class="tab-badge" id="approvalsBadge" style="display:none">0</span></button>
+        <!-- User switcher (leadership only) -->
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;" id="userSwitcher">
+            <select class="form-select" id="userSwitcherSelect" onchange="switchUser(this.value)" style="background:#252525;border-color:#444;padding:6px 10px;font-size:12px;border-radius:6px;min-width:160px;display:none;">
+                <option value="">👁 View as: Everyone</option>
+            </select>
+        </div>
     </nav>
 
     <!-- TAB: DASHBOARD -->
@@ -885,10 +891,10 @@
         const API_URL = 'https://studio-rnb-api.jbridges-c38.workers.dev';
         
         const urlParams = new URLSearchParams(window.location.search);
-        const filterUser = urlParams.get('user');
+        let filterUser = urlParams.get('user');
         const filterProject = urlParams.get('project');
         const filterPhase = urlParams.get('phase');
-        const isLeadership = urlParams.get('view') === 'leadership';
+        let isLeadership = urlParams.get('view') === 'leadership';
         const defaultTab = urlParams.get('tab');
 
         let dashboardData = null;
@@ -897,6 +903,167 @@
         let clientsData = null;
         let staffData = null;
         let currentTab = defaultTab || 'dashboard';
+
+        // ==================== ROLE SYSTEM ====================
+        const ROLE_CONFIG = {
+            // Leadership: sees everything, can approve, can submit assessments
+            leadership: {
+                tabs: ['dashboard', 'time', 'assessments', 'approvals'],
+                canApprove: true,
+                canSubmitAssessments: true,
+                seesAllProjects: true,
+                seesTeamWorkload: true,
+                seesBudgetAlerts: true,
+                notifications: ['pending_approvals', 'budget_alerts', 'hour_requests', 'pm_handoff_due', 'revision_submitted']
+            },
+            // Client Solutions (Samuel, Johnathon): assessments tab
+            clientSolutions: {
+                tabs: ['dashboard', 'time', 'assessments'],
+                canApprove: false,
+                canSubmitAssessments: true, // Samuel can submit
+                seesAllProjects: false,
+                seesTeamWorkload: false,
+                seesBudgetAlerts: false,
+                notifications: ['revision_requested', 'assessment_declined', 'assessment_approved']
+            },
+            // Client Solutions read-only (Johnathon): assessments read-only
+            clientSolutionsReadonly: {
+                tabs: ['dashboard', 'time', 'assessments'],
+                canApprove: false,
+                canSubmitAssessments: false,
+                seesAllProjects: false,
+                seesTeamWorkload: false,
+                seesBudgetAlerts: false,
+                notifications: []
+            },
+            // Senior PM: approvals read-only, kickoff, budget alerts
+            seniorPM: {
+                tabs: ['dashboard', 'time', 'approvals'],
+                canApprove: false,
+                canSubmitAssessments: false,
+                seesAllProjects: true,
+                seesTeamWorkload: true,
+                seesBudgetAlerts: true,
+                notifications: ['approved_kickoff', 'budget_alerts', 'hour_requests', 'sa_handoff_due', 'pm_handoff_due']
+            },
+            // Assistant PM
+            assistantPM: {
+                tabs: ['dashboard', 'time'],
+                canApprove: false,
+                canSubmitAssessments: false,
+                seesAllProjects: false,
+                seesTeamWorkload: false,
+                seesBudgetAlerts: false,
+                notifications: ['assigned_tasks']
+            },
+            // Senior Architect
+            seniorArchitect: {
+                tabs: ['dashboard', 'time'],
+                canApprove: false,
+                canSubmitAssessments: false,
+                seesAllProjects: false,
+                seesTeamWorkload: false,
+                seesBudgetAlerts: false,
+                notifications: ['assigned_projects', 'kickoff_review', 'sa_handoff_due']
+            },
+            // BIM / Coordinator
+            teamMember: {
+                tabs: ['dashboard', 'time'],
+                canApprove: false,
+                canSubmitAssessments: false,
+                seesAllProjects: false,
+                seesTeamWorkload: false,
+                seesBudgetAlerts: false,
+                notifications: ['assigned_tasks']
+            }
+        };
+
+        // Map users to roles
+        const USER_ROLES = {
+            'jeremiah bridges': 'leadership',
+            'rourke brakeville': 'leadership',
+            'samuel crook': 'clientSolutions',
+            'johnathon thompson': 'clientSolutionsReadonly',
+            'tammia marcano': 'seniorPM',
+            'emma fernandez': 'assistantPM',
+            'young yoon': 'seniorArchitect',
+            'shaguni gupta': 'seniorArchitect',
+            'john gil corzo': 'teamMember',
+            'melissa galeano': 'teamMember'
+        };
+
+        function getUserRole() {
+            if (!filterUser) return ROLE_CONFIG.leadership; // No filter = see everything
+            const roleName = USER_ROLES[filterUser.toLowerCase()] || 'teamMember';
+            return ROLE_CONFIG[roleName];
+        }
+
+        function getUserRoleName() {
+            if (!filterUser) return 'leadership';
+            return USER_ROLES[filterUser.toLowerCase()] || 'teamMember';
+        }
+
+        // ==================== ROLE-BASED TAB VISIBILITY ====================
+        function setupTabs() {
+            const role = getUserRole();
+            
+            // Show/hide tabs
+            const assessBtn = document.getElementById('tabBtnAssessments');
+            const approvalBtn = document.getElementById('tabBtnApprovals');
+            
+            if (role.tabs.includes('assessments')) assessBtn.style.display = '';
+            else assessBtn.style.display = 'none';
+            
+            if (role.tabs.includes('approvals')) approvalBtn.style.display = '';
+            else approvalBtn.style.display = 'none';
+
+            // Leadership flag
+            const roleName = getUserRoleName();
+            if (roleName === 'leadership') isLeadership = true;
+
+            // User switcher (only for leadership or no user)
+            setupUserSwitcher();
+        }
+
+        async function setupUserSwitcher() {
+            const switcher = document.getElementById('userSwitcherSelect');
+            const roleName = getUserRoleName();
+            
+            if (roleName !== 'leadership') {
+                switcher.style.display = 'none';
+                return;
+            }
+
+            switcher.style.display = '';
+            
+            // Load staff for switcher
+            const staff = await loadStaff();
+            if (!staff?.staff) return;
+
+            switcher.innerHTML = '<option value="">👁 View as: Everyone</option>';
+            staff.staff.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.name;
+                opt.textContent = `👤 ${s.name} (${s.role || 'No role'})`;
+                if (filterUser && filterUser.toLowerCase() === s.name.toLowerCase()) opt.selected = true;
+                switcher.appendChild(opt);
+            });
+        }
+
+        function switchUser(name) {
+            const url = new URL(window.location);
+            if (name) {
+                url.searchParams.set('user', name);
+                // Check if switching to leadership
+                const roleName = USER_ROLES[name.toLowerCase()];
+                if (roleName === 'leadership') url.searchParams.set('view', 'leadership');
+                else url.searchParams.delete('view');
+            } else {
+                url.searchParams.delete('user');
+                url.searchParams.set('view', 'leadership');
+            }
+            window.location = url.toString();
+        }
 
         // Role to form field mapping
         const ROLE_FIELD_MAP = {
@@ -939,19 +1106,16 @@
                 const customInput = document.getElementById(selectId + 'Custom');
                 if (!select) return;
 
-                // Find matching staff
                 const matching = staffData.staff.filter(s => 
                     roles.some(r => s.role && s.role.toLowerCase().includes(r.toLowerCase()))
                 );
 
-                // Also include all staff as "Other" options
                 const allStaff = staffData.staff.filter(s => 
                     !matching.find(m => m.name === s.name)
                 );
 
                 select.innerHTML = '<option value="">-- Select --</option>';
                 
-                // Add role-matched staff first
                 matching.forEach(s => {
                     const opt = document.createElement('option');
                     opt.value = s.name;
@@ -959,7 +1123,6 @@
                     select.appendChild(opt);
                 });
 
-                // Add separator + other staff
                 if (allStaff.length > 0 && matching.length > 0) {
                     const sep = document.createElement('option');
                     sep.disabled = true;
@@ -973,13 +1136,11 @@
                     select.appendChild(opt);
                 });
 
-                // Add "Custom / Other" option
                 const customOpt = document.createElement('option');
                 customOpt.value = '__custom__';
                 customOpt.textContent = '✏️ Type a custom name...';
                 select.appendChild(customOpt);
 
-                // Toggle custom input
                 select.addEventListener('change', () => {
                     if (select.value === '__custom__') {
                         customInput.style.display = 'block';
@@ -991,7 +1152,6 @@
                 });
             });
 
-            // Update status
             const status = document.getElementById('staffLoadStatus');
             if (status) status.textContent = `✓ ${staffData.staff.length} team members loaded`;
         }
@@ -1003,6 +1163,106 @@
                 return custom.value || '';
             }
             return select ? select.value : '';
+        }
+
+        // ==================== NOTIFICATION BUILDER ====================
+        function buildNotificationAlerts() {
+            const role = getUserRole();
+            const roleName = getUserRoleName();
+            const userLower = (filterUser || '').toLowerCase();
+            let alerts = '';
+            const assessments = assessmentsData?.assessments || [];
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0=Sun, 5=Fri
+
+            // 🔔 Leadership: Pending approvals
+            if (role.notifications.includes('pending_approvals')) {
+                const pending = assessments.filter(a => a.status === 'Submitted');
+                if (pending.length > 0) {
+                    alerts += `<div class="alert-banner" style="background:rgba(255,152,0,0.1);border-color:rgba(255,152,0,0.3);cursor:pointer;" onclick="switchTab('approvals')"><span class="alert-icon">📥</span><div class="alert-content"><div class="alert-title" style="color:#FF9800;">${pending.length} Assessment${pending.length > 1 ? 's' : ''} Pending Approval</div><div class="alert-text">Click to review and approve/decline</div></div></div>`;
+                }
+            }
+
+            // 🔔 Leadership: Revision resubmitted (Submitted again after Needs Revision)
+            if (role.notifications.includes('revision_submitted')) {
+                const resubmitted = assessments.filter(a => a.status === 'Submitted' && a.revisionNotes);
+                if (resubmitted.length > 0) {
+                    alerts += `<div class="alert-banner" style="background:rgba(100,181,246,0.1);border-color:rgba(100,181,246,0.3);cursor:pointer;" onclick="switchTab('approvals')"><span class="alert-icon">🔄</span><div class="alert-content"><div class="alert-title" style="color:#64B5F6;">${resubmitted.length} Revised Assessment${resubmitted.length > 1 ? 's' : ''} Ready for Re-Review</div><div class="alert-text">${resubmitted.map(a => a.title).join(', ')}</div></div></div>`;
+                }
+            }
+
+            // 🔔 PM: Approved assessments needing kickoff
+            if (role.notifications.includes('approved_kickoff')) {
+                const needKickoff = assessments.filter(a => 
+                    a.status === 'Approved' && (!a.kickoffStatus || a.kickoffStatus === 'Not Scheduled')
+                );
+                let relevant = needKickoff;
+                if (filterUser) {
+                    relevant = needKickoff.filter(a => 
+                        (a.seniorPM || '').toLowerCase().includes(userLower) ||
+                        (a.assistantPM || '').toLowerCase().includes(userLower)
+                    );
+                }
+                if (relevant.length > 0) {
+                    const names = relevant.map(a => a.title || 'Untitled').join(', ');
+                    alerts += `<div class="alert-banner" style="background:rgba(139,92,246,0.1);border-color:rgba(139,92,246,0.3);"><span class="alert-icon">🔔</span><div class="alert-content"><div class="alert-title" style="color:#8B5CF6;">${relevant.length} Assessment${relevant.length > 1 ? 's' : ''} Approved — Ready for Kickoff</div><div class="alert-text">${names}</div></div></div>`;
+                }
+            }
+
+            // 🔔 Samuel: Revision requested
+            if (role.notifications.includes('revision_requested')) {
+                const needsRevision = assessments.filter(a => a.status === 'Needs Revision');
+                let relevant = needsRevision;
+                if (filterUser) {
+                    relevant = needsRevision.filter(a => 
+                        (a.completedBy || '').toLowerCase().includes(userLower)
+                    );
+                }
+                if (relevant.length > 0) {
+                    alerts += `<div class="alert-banner" style="background:rgba(255,152,0,0.1);border-color:rgba(255,152,0,0.3);cursor:pointer;" onclick="switchTab('assessments')"><span class="alert-icon">✏️</span><div class="alert-content"><div class="alert-title" style="color:#FF9800;">${relevant.length} Assessment${relevant.length > 1 ? 's' : ''} Need${relevant.length === 1 ? 's' : ''} Revision</div><div class="alert-text">${relevant.map(a => `${a.title}: ${a.revisionNotes || 'See notes'}`).join(' | ')}</div></div></div>`;
+                }
+            }
+
+            // 🔔 Samuel: Assessment declined
+            if (role.notifications.includes('assessment_declined')) {
+                const declined = assessments.filter(a => a.status === 'Declined');
+                let relevant = declined;
+                if (filterUser) {
+                    relevant = declined.filter(a => (a.completedBy || '').toLowerCase().includes(userLower));
+                }
+                if (relevant.length > 0) {
+                    alerts += `<div class="alert-banner"><span class="alert-icon">❌</span><div class="alert-content"><div class="alert-title">${relevant.length} Assessment${relevant.length > 1 ? 's' : ''} Declined</div><div class="alert-text">${relevant.map(a => a.title).join(', ')}</div></div></div>`;
+                }
+            }
+
+            // 🔔 Samuel: Assessment approved (confirmation)
+            if (role.notifications.includes('assessment_approved')) {
+                const recentApproved = assessments.filter(a => {
+                    if (a.status !== 'Approved' && a.status !== 'Confirmed' && a.status !== 'Active') return false;
+                    if (filterUser && !(a.completedBy || '').toLowerCase().includes(userLower)) return false;
+                    // Only show if approved in last 7 days
+                    if (!a.approvedDate) return false;
+                    const diff = (today - new Date(a.approvedDate)) / (1000 * 60 * 60 * 24);
+                    return diff <= 7;
+                });
+                if (recentApproved.length > 0) {
+                    alerts += `<div class="alert-banner" style="background:rgba(76,175,80,0.1);border-color:rgba(76,175,80,0.3);"><span class="alert-icon">✅</span><div class="alert-content"><div class="alert-title" style="color:#4CAF50;">${recentApproved.length} Assessment${recentApproved.length > 1 ? 's' : ''} Approved</div><div class="alert-text">${recentApproved.map(a => a.title).join(', ')}</div></div></div>`;
+                }
+            }
+
+            // 📋 Friday handoff reminders
+            if (dayOfWeek >= 4 && dayOfWeek <= 5) { // Thursday or Friday
+                // SA handoff reminder
+                if (role.notifications.includes('sa_handoff_due')) {
+                    alerts += `<div class="alert-banner warning"><span class="alert-icon">📋</span><div class="alert-content"><div class="alert-title" style="color:#FF9800;">Weekly Handoff Due</div><div class="alert-text">${dayOfWeek === 4 ? 'Due tomorrow' : 'Due today'} — Submit your weekly project handoff to the PM</div></div></div>`;
+                }
+                // PM handoff reminder
+                if (role.notifications.includes('pm_handoff_due')) {
+                    alerts += `<div class="alert-banner warning"><span class="alert-icon">📋</span><div class="alert-content"><div class="alert-title" style="color:#FF9800;">${roleName === 'leadership' ? 'PM Overview Reports Due' : 'PM Overview Report Due'}</div><div class="alert-text">${dayOfWeek === 4 ? 'Due tomorrow' : 'Due today'} — ${roleName === 'leadership' ? 'Review PM overview reports from project managers' : 'Compile SA handoffs into leadership overview report'}</div></div></div>`;
+                }
+            }
+
+            return alerts;
         }
 
         // ==================== TAB SYSTEM ====================
@@ -1134,10 +1394,12 @@
 
         // ==================== APPLY FILTERS ====================
         function applyFilters() {
+            const role = getUserRole();
             let phases = [...dashboardData.phases];
             let tasks = [...dashboardData.tasks];
             
-            if (filterUser) {
+            // Filter by user (skip if role.seesAllProjects and no explicit user filter)
+            if (filterUser && !role.seesAllProjects) {
                 const userLower = filterUser.toLowerCase();
                 phases = phases.filter(p => p.teamMember && p.teamMember.toLowerCase().includes(userLower));
             }
@@ -1213,15 +1475,24 @@
         // ==================== RENDER DASHBOARD TAB ====================
         function renderDashboard() {
             const data = filteredData;
+            const role = getUserRole();
+            const roleName = getUserRoleName();
             const completionPct = data.totalAllocated > 0 ? Math.round((data.totalLogged / data.totalAllocated) * 100) : 0;
             
             let title = 'Studio RNB Dashboard';
             let badges = '<div class="badge live-badge"><span class="live-dot"></span> Live</div>';
             
-            if (filterUser) { title = 'My Dashboard'; badges = `<span class="badge user-badge">${filterUser}</span>` + badges; }
-            if (isLeadership) { title = 'Leadership Dashboard'; badges = `<span class="badge leadership-badge">Leadership</span>` + badges; }
+            if (filterUser) {
+                title = filterUser.split(' ')[0] + "'s Dashboard";
+                badges = `<span class="badge user-badge">${filterUser}</span>` + badges;
+            }
+            if (isLeadership || roleName === 'leadership') {
+                if (!filterUser) title = 'Leadership Dashboard';
+                badges = `<span class="badge leadership-badge">Leadership</span>` + badges;
+            }
             if (filterProject) badges += `<span class="badge user-badge">Project: ${filterProject}</span>`;
             
+            // Task alerts
             let alertsHTML = '';
             if (data.overdueTasks > 0) {
                 alertsHTML += `<div class="alert-banner"><span class="alert-icon">🚨</span><div class="alert-content"><div class="alert-title">${data.overdueTasks} Overdue Task${data.overdueTasks > 1 ? 's' : ''}</div><div class="alert-text">Tasks that have passed their due date</div></div></div>`;
@@ -1230,34 +1501,12 @@
                 alertsHTML += `<div class="alert-banner warning"><span class="alert-icon">⚠️</span><div class="alert-content"><div class="alert-title">${data.dueSoonTasks} Task${data.dueSoonTasks > 1 ? 's' : ''} Due Soon</div><div class="alert-text">Due within the next 3 days</div></div></div>`;
             }
 
-            // PM notification: check for approved assessments needing kickoff
-            if (assessmentsData?.assessments) {
-                const approvedNeedingKickoff = assessmentsData.assessments.filter(a => 
-                    a.status === 'Approved' && (!a.kickoffStatus || a.kickoffStatus === 'Not Scheduled')
-                );
-                // Show to PMs or if no user filter (leadership sees all)
-                const userLower = (filterUser || '').toLowerCase();
-                const isPM = userLower.includes('tammia') || userLower.includes('emma') || !filterUser;
-                
-                if (approvedNeedingKickoff.length > 0 && isPM) {
-                    // If user-filtered, only show assessments where they're the Senior PM
-                    let relevant = approvedNeedingKickoff;
-                    if (filterUser) {
-                        relevant = approvedNeedingKickoff.filter(a => 
-                            (a.seniorPM || '').toLowerCase().includes(userLower) ||
-                            (a.assistantPM || '').toLowerCase().includes(userLower)
-                        );
-                    }
-                    if (relevant.length > 0) {
-                        const names = relevant.map(a => a.title || 'Untitled').join(', ');
-                        alertsHTML += `<div class="alert-banner" style="background:rgba(139,92,246,0.1);border-color:rgba(139,92,246,0.3);"><span class="alert-icon">🔔</span><div class="alert-content"><div class="alert-title" style="color:#8B5CF6;">${relevant.length} Assessment${relevant.length > 1 ? 's' : ''} Approved — Ready for Kickoff</div><div class="alert-text">${names} — <a href="#" onclick="switchTab('approvals');return false;" style="color:#C9A227;">Schedule kickoff →</a></div></div></div>`;
-                    }
-                }
-            }
+            // Role-based notification alerts
+            alertsHTML += buildNotificationAlerts();
             
-            // Budget alerts (Senior PM + Leadership)
+            // Budget alerts (role-based)
             let budgetAlertsHTML = '';
-            if ((isLeadership || !filterUser) && data.budgetAlerts.length > 0) {
+            if (role.seesBudgetAlerts && data.budgetAlerts.length > 0) {
                 let rows = data.budgetAlerts.slice(0, 5).map(a => {
                     const pctClass = a.percentage >= 100 ? 'danger' : 'warning';
                     return `<div class="budget-alert-row"><div><div class="budget-alert-name">${a.entry}</div><div class="budget-alert-phase">${a.phase} • ${a.teamMember || 'Unassigned'}</div></div><div>${Number(a.hoursLogged)}/${Number(a.hoursAllocated)} hrs</div><div class="budget-bar"><div class="budget-bar-fill ${pctClass}" style="width:${Math.min(a.percentage,100)}%"></div></div><div class="budget-pct ${pctClass}">${a.percentage}%</div></div>`;
@@ -1265,9 +1514,9 @@
                 budgetAlertsHTML = `<div class="budget-alerts"><div class="section-title">🔥 Budget Alerts</div>${rows}</div>`;
             }
             
-            // Team workload (leadership)
+            // Team workload (role-based)
             let teamWorkloadHTML = '';
-            if ((isLeadership || !filterUser) && Object.keys(data.teamWorkload).length > 0) {
+            if (role.seesTeamWorkload && Object.keys(data.teamWorkload).length > 0) {
                 teamWorkloadHTML = `<div class="chart-card"><h3>👥 Team Workload</h3><div class="chart-container tall"><canvas id="teamChart"></canvas></div></div>`;
             }
             
@@ -1366,6 +1615,7 @@
 
         // ==================== RENDER ASSESSMENTS TAB ====================
         function renderAssessmentsTab() {
+            const role = getUserRole();
             const assessments = assessmentsData?.assessments || [];
 
             let tableRows = '';
@@ -1387,11 +1637,14 @@
                 }).join('');
             }
 
+            const userName = filterUser ? filterUser.split(' ')[0] : 'All';
+            const submitBtn = role.canSubmitAssessments ? `<button class="btn btn-primary" onclick="openAssessmentModal()">+ New Assessment</button>` : '';
+
             document.getElementById('tab-assessments').innerHTML = `
                 <div class="header">
-                    <div class="header-left"><h1>📋 Assessments</h1><span class="badge user-badge">Samuel's View</span></div>
+                    <div class="header-left"><h1>📋 Assessments</h1><span class="badge user-badge">${userName}'s View</span></div>
                     <div class="header-actions">
-                        <button class="btn btn-primary" onclick="openAssessmentModal()">+ New Assessment</button>
+                        ${submitBtn}
                         <button class="btn" onclick="assessmentsData=null;loadAssessments()">🔄 Refresh</button>
                     </div>
                 </div>
@@ -1411,12 +1664,13 @@
                 <div class="empty-state">
                     <div class="empty-state-icon">📋</div>
                     <div class="empty-state-title">No Assessments Yet</div>
-                    <div class="empty-state-text">Click "+ New Assessment" to submit your first client assessment from Excel.</div>
+                    <div class="empty-state-text">${role.canSubmitAssessments ? 'Click "+ New Assessment" to submit your first client assessment.' : 'Assessments will appear here once submitted.'}</div>
                 </div>`}`;
         }
 
         // ==================== RENDER APPROVALS TAB ====================
         function renderApprovalsTab() {
+            const role = getUserRole();
             const assessments = assessmentsData?.assessments || [];
             const pending = assessments.filter(a => a.status === 'Submitted');
             const needsRevision = assessments.filter(a => a.status === 'Needs Revision');
@@ -1427,14 +1681,26 @@
             if (pending.length > 0) { badge.textContent = pending.length; badge.style.display = 'inline'; }
             else { badge.style.display = 'none'; }
 
+            // Approver name (for Notion comment)
+            const approverName = filterUser || 'Leadership';
+
             let pendingHTML = pending.length > 0 ? pending.map(a => {
                 const totalHours = (Number(a.leadArchitectHours)||0) + (Number(a.seniorPMHours)||0) + (Number(a.assistantPMHours)||0) + (Number(a.bimVdcHours)||0) + (Number(a.coordinatorHours)||0) + (Number(a.leadershipHours)||0);
+                
+                // Approval buttons only for leadership
+                const actionButtons = role.canApprove ? `
+                    <div class="approval-actions">
+                        <button class="btn btn-approve" onclick="handleApproval('${a.id}', 'Approved')">✅ Approve</button>
+                        <button class="btn btn-revise" onclick="handleApproval('${a.id}', 'Needs Revision')">✏️ Request Revision</button>
+                        <button class="btn btn-decline" onclick="handleApproval('${a.id}', 'Declined')">❌ Decline</button>
+                    </div>` : `<div style="padding:12px;background:rgba(139,92,246,0.1);border-radius:8px;margin-top:16px;font-size:13px;color:#8B5CF6;">📋 Read-only view — awaiting leadership decision</div>`;
+
                 return `
                 <div class="approval-detail">
                     <div class="approval-detail-header">
                         <div>
                             <div class="approval-detail-title">${a.title || 'Untitled'}</div>
-                            <div style="color:#888;font-size:13px;margin-top:4px;">Submitted ${formatDate(a.assessmentDate)} by ${a.completedBy || 'Samuel'}</div>
+                            <div style="color:#888;font-size:13px;margin-top:4px;">Submitted ${formatDate(a.assessmentDate)} by ${a.completedBy || 'Team'}</div>
                         </div>
                         <span class="status-pill status-submitted">Submitted</span>
                     </div>
@@ -1460,11 +1726,7 @@
                         <div class="detail-item"><div class="detail-label">Fee Floor</div><div class="detail-value" style="color:#C9A227;font-size:18px;">${formatCurrency(a.feeFloor)}</div></div>
                         <div class="detail-item"><div class="detail-label">Fee Range</div><div class="detail-value">${formatCurrency(a.feeRangeLow)} – ${formatCurrency(a.feeRangeHigh)}</div></div>
                     </div>
-                    <div class="approval-actions">
-                        <button class="btn btn-approve" onclick="handleApproval('${a.id}', 'Approved')">✅ Approve</button>
-                        <button class="btn btn-revise" onclick="handleApproval('${a.id}', 'Needs Revision')">✏️ Request Revision</button>
-                        <button class="btn btn-decline" onclick="handleApproval('${a.id}', 'Declined')">❌ Decline</button>
-                    </div>
+                    ${actionButtons}
                 </div>`;
             }).join('') : `<div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">No Pending Approvals</div><div class="empty-state-text">All assessments have been reviewed.</div></div>`;
 
@@ -1482,9 +1744,11 @@
                     `).join('')}
                 </div>` : '';
 
+            const viewLabel = role.canApprove ? (filterUser ? filterUser.split(' ')[0] : 'Leadership') : (filterUser ? filterUser.split(' ')[0] : 'View');
+
             document.getElementById('tab-approvals').innerHTML = `
                 <div class="header">
-                    <div class="header-left"><h1>✅ Approvals</h1><span class="badge leadership-badge">Jeremiah's View</span></div>
+                    <div class="header-left"><h1>✅ Approvals</h1><span class="badge ${role.canApprove ? 'leadership-badge' : 'user-badge'}">${viewLabel}'s View${!role.canApprove ? ' (Read-Only)' : ''}</span></div>
                     <div class="header-actions">
                         <button class="btn" onclick="assessmentsData=null;loadApprovals()">🔄 Refresh</button>
                     </div>
@@ -1517,12 +1781,13 @@
 
             try {
                 const today = new Date().toISOString().split('T')[0];
+                const approverName = filterUser || 'Jeremiah Bridges';
                 const response = await fetch(`${API_URL}/assessments/${assessmentId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         status: newStatus,
-                        approvedBy: 'Jeremiah Bridges',
+                        approvedBy: approverName,
                         approvedDate: today,
                         approvalNotes: notes,
                         revisionNotes: newStatus === 'Needs Revision' ? notes : undefined
@@ -1573,7 +1838,7 @@
             const body = {
                 title: document.getElementById('assessClientName').value,
                 assessmentDate: today,
-                completedBy: 'Samuel Crook',
+                completedBy: filterUser || 'Samuel Crook',
                 projectType: document.getElementById('assessProjectType').value,
                 jurisdiction: document.getElementById('assessJurisdiction').value,
                 deliveryExpectation: document.getElementById('assessDelivery').value || undefined,
@@ -1765,6 +2030,7 @@
 
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
+            setupTabs();
             if (defaultTab) switchTab(defaultTab);
             else loadDashboard();
         });
