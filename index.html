@@ -526,6 +526,163 @@
         .empty-state-title { font-size: 18px; font-weight: 600; color: #888; margin-bottom: 8px; }
         .empty-state-text { font-size: 14px; }
 
+        /* ==================== KICKOFF TAB ==================== */
+        .kickoff-project-select {
+            background: #1e1e1e; border: 1px solid #333; border-radius: 10px;
+            padding: 20px; margin-bottom: 20px;
+        }
+
+        .kickoff-project-card {
+            background: #252525; border: 1px solid #333; border-radius: 8px;
+            padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;
+        }
+        .kickoff-project-card:hover { border-color: #C9A227; }
+        .kickoff-project-card.selected { border-color: #C9A227; background: rgba(201,162,39,0.08); }
+
+        .kickoff-form-section {
+            background: #1e1e1e; border: 1px solid #333; border-radius: 10px;
+            padding: 20px; margin-bottom: 20px;
+        }
+
+        .kickoff-form-section h3 {
+            font-size: 15px; font-weight: 600; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .phase-row {
+            display: grid; grid-template-columns: 140px 1fr 1fr auto;
+            gap: 10px; align-items: end; padding: 12px; margin-bottom: 8px;
+            background: #252525; border-radius: 8px; border: 1px solid #333;
+        }
+
+        .phase-row .phase-name-tag {
+            font-weight: 600; font-size: 14px; padding: 8px 0;
+            color: #C9A227;
+        }
+
+        .phase-team-row {
+            display: grid; grid-template-columns: 1fr 100px 40px;
+            gap: 8px; align-items: center; margin-top: 6px;
+        }
+
+        .add-btn {
+            background: rgba(201,162,39,0.15); color: #C9A227; border: 1px dashed #C9A227;
+            padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;
+            transition: all 0.2s;
+        }
+        .add-btn:hover { background: rgba(201,162,39,0.25); }
+
+        .remove-btn {
+            background: rgba(244,67,54,0.15); color: #f44336; border: none;
+            padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 16px;
+        }
+        .remove-btn:hover { background: rgba(244,67,54,0.3); }
+
+        .milestone-row {
+            display: grid; grid-template-columns: 160px 1fr 1fr;
+            gap: 10px; align-items: center; padding: 10px 12px;
+            background: #252525; border-radius: 8px; margin-bottom: 8px;
+        }
+
+        .milestone-label {
+            font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px;
+        }
+        .milestone-label .tentative { font-weight: 400; color: #888; font-size: 11px; }
+
+        /* Gantt Chart */
+        .gantt-container {
+            background: #1e1e1e; border: 1px solid #333; border-radius: 10px;
+            padding: 20px; margin-bottom: 20px; overflow-x: auto;
+        }
+
+        .gantt-chart { min-width: 600px; position: relative; }
+
+        .gantt-header {
+            display: flex; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px;
+        }
+
+        .gantt-label-col { width: 160px; flex-shrink: 0; font-size: 12px; color: #888; }
+        .gantt-timeline-col { flex: 1; display: flex; position: relative; }
+
+        .gantt-month {
+            flex: 1; text-align: center; font-size: 11px; color: #666;
+            border-left: 1px solid #2a2a2a; padding: 2px 0;
+        }
+
+        .gantt-row {
+            display: flex; align-items: center; height: 32px; margin-bottom: 4px;
+        }
+
+        .gantt-row-label {
+            width: 160px; flex-shrink: 0; font-size: 12px; color: #ccc;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .gantt-row-bar-area { flex: 1; position: relative; height: 20px; }
+
+        .gantt-bar {
+            position: absolute; height: 20px; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; color: #fff; font-weight: 600;
+            min-width: 30px;
+        }
+
+        .gantt-bar.sd { background: #64B5F6; }
+        .gantt-bar.dd { background: #FFAB91; }
+        .gantt-bar.cd { background: #81C784; }
+        .gantt-bar.permitting { background: #FFB74D; }
+        .gantt-bar.default { background: #CE93D8; }
+
+        .gantt-milestone {
+            position: absolute; top: -4px; width: 0; height: 0;
+            border-left: 8px solid transparent; border-right: 8px solid transparent;
+            border-bottom: 12px solid #C9A227; transform: translateX(-8px);
+            z-index: 10;
+        }
+
+        .gantt-milestone-line {
+            position: absolute; top: 0; bottom: 0; width: 1px;
+            background: rgba(201,162,39,0.4); z-index: 5;
+        }
+
+        .gantt-milestone-label {
+            position: absolute; top: -18px; font-size: 9px; color: #C9A227;
+            white-space: nowrap; transform: translateX(-50%);
+        }
+
+        /* SA Review Mini Section */
+        .sa-review-card {
+            background: #1e1e1e; border: 2px solid #64B5F6;
+            border-radius: 10px; padding: 20px; margin-bottom: 20px;
+        }
+
+        .sa-review-card h3 { color: #64B5F6; }
+
+        .sa-scope-table {
+            width: 100%; border-collapse: collapse; margin: 12px 0;
+        }
+
+        .sa-scope-table th, .sa-scope-table td {
+            padding: 8px 12px; text-align: left; border-bottom: 1px solid #333;
+            font-size: 13px;
+        }
+        .sa-scope-table th { color: #888; font-weight: 500; font-size: 12px; }
+
+        /* Budget Summary */
+        .budget-summary-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px; margin: 12px 0;
+        }
+
+        .budget-phase-card {
+            background: #252525; border-radius: 8px; padding: 12px;
+            border-left: 3px solid #C9A227;
+        }
+
+        .budget-phase-name { font-size: 12px; color: #888; margin-bottom: 4px; }
+        .budget-phase-hours { font-size: 20px; font-weight: 700; color: #C9A227; }
+        .budget-phase-detail { font-size: 11px; color: #666; margin-top: 4px; }
+
         /* ==================== RESPONSIVE ==================== */
         @media (max-width: 768px) {
             .tab-nav { padding: 0 12px; }
@@ -559,6 +716,7 @@
         <button class="tab-btn" data-tab="time" onclick="switchTab('time')">⏱️ Time</button>
         <button class="tab-btn" data-tab="assessments" onclick="switchTab('assessments')" id="tabBtnAssessments" style="display:none">📋 Assessments</button>
         <button class="tab-btn" data-tab="approvals" onclick="switchTab('approvals')" id="tabBtnApprovals" style="display:none">✅ Approvals <span class="tab-badge" id="approvalsBadge" style="display:none">0</span></button>
+        <button class="tab-btn" data-tab="kickoff" onclick="switchTab('kickoff')" id="tabBtnKickoff" style="display:none">🚀 Kickoff <span class="tab-badge" id="kickoffBadge" style="display:none">0</span></button>
         <!-- User switcher (leadership only) -->
         <div style="margin-left:auto;display:flex;align-items:center;gap:8px;" id="userSwitcher">
             <select class="form-select" id="userSwitcherSelect" onchange="switchUser(this.value)" style="background:#252525;border-color:#444;padding:6px 10px;font-size:12px;border-radius:6px;min-width:160px;display:none;">
@@ -596,6 +754,14 @@
         <div class="loading">
             <div class="loading-spinner"></div>
             <p>Loading approvals...</p>
+        </div>
+    </div>
+
+    <!-- TAB: KICKOFF -->
+    <div class="tab-content" id="tab-kickoff">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading kickoff data...</p>
         </div>
     </div>
 
@@ -908,7 +1074,7 @@
         const ROLE_CONFIG = {
             // Leadership: sees everything, can approve, can submit assessments
             leadership: {
-                tabs: ['dashboard', 'time', 'assessments', 'approvals'],
+                tabs: ['dashboard', 'time', 'assessments', 'approvals', 'kickoff'],
                 canApprove: true,
                 canSubmitAssessments: true,
                 seesAllProjects: true,
@@ -938,7 +1104,7 @@
             },
             // Senior PM: approvals read-only, kickoff, budget alerts
             seniorPM: {
-                tabs: ['dashboard', 'time', 'approvals'],
+                tabs: ['dashboard', 'time', 'approvals', 'kickoff'],
                 canApprove: false,
                 canSubmitAssessments: false,
                 seesAllProjects: true,
@@ -958,7 +1124,7 @@
             },
             // Senior Architect
             seniorArchitect: {
-                tabs: ['dashboard', 'time'],
+                tabs: ['dashboard', 'time', 'kickoff'],
                 canApprove: false,
                 canSubmitAssessments: false,
                 seesAllProjects: false,
@@ -1010,12 +1176,16 @@
             // Show/hide tabs
             const assessBtn = document.getElementById('tabBtnAssessments');
             const approvalBtn = document.getElementById('tabBtnApprovals');
+            const kickoffBtn = document.getElementById('tabBtnKickoff');
             
             if (role.tabs.includes('assessments')) assessBtn.style.display = '';
             else assessBtn.style.display = 'none';
             
             if (role.tabs.includes('approvals')) approvalBtn.style.display = '';
             else approvalBtn.style.display = 'none';
+
+            if (role.tabs.includes('kickoff')) kickoffBtn.style.display = '';
+            else kickoffBtn.style.display = 'none';
 
             // Leadership flag
             const roleName = getUserRoleName();
@@ -1205,7 +1375,7 @@
                 }
                 if (relevant.length > 0) {
                     const names = relevant.map(a => a.title || 'Untitled').join(', ');
-                    alerts += `<div class="alert-banner" style="background:rgba(139,92,246,0.1);border-color:rgba(139,92,246,0.3);"><span class="alert-icon">🔔</span><div class="alert-content"><div class="alert-title" style="color:#8B5CF6;">${relevant.length} Assessment${relevant.length > 1 ? 's' : ''} Approved — Ready for Kickoff</div><div class="alert-text">${names}</div></div></div>`;
+                    alerts += `<div class="alert-banner" style="background:rgba(139,92,246,0.1);border-color:rgba(139,92,246,0.3);cursor:pointer;" onclick="switchTab('kickoff')"><span class="alert-icon">🔔</span><div class="alert-content"><div class="alert-title" style="color:#8B5CF6;">${relevant.length} Assessment${relevant.length > 1 ? 's' : ''} Approved — Ready for Kickoff</div><div class="alert-text">${names} — <span style="color:#C9A227;">Open Kickoff tab →</span></div></div></div>`;
                 }
             }
 
@@ -1250,6 +1420,17 @@
                 }
             }
 
+            // 🚀 SA: Kickoff review assigned to them
+            if (role.notifications.includes('kickoff_review')) {
+                const myReviews = assessments.filter(a => 
+                    a.kickoffStatus === 'Scheduled' && !a.saConfirmed &&
+                    (a.saReviewer || '').toLowerCase().includes(userLower)
+                );
+                if (myReviews.length > 0) {
+                    alerts += `<div class="alert-banner" style="background:rgba(100,181,246,0.1);border-color:rgba(100,181,246,0.3);cursor:pointer;" onclick="switchTab('kickoff')"><span class="alert-icon">🚀</span><div class="alert-content"><div class="alert-title" style="color:#64B5F6;">${myReviews.length} Kickoff Review${myReviews.length > 1 ? 's' : ''} Pending</div><div class="alert-text">${myReviews.map(a => a.title).join(', ')} — <span style="color:#C9A227;">Review scope →</span></div></div></div>`;
+                }
+            }
+
             // 📋 Friday handoff reminders
             if (dayOfWeek >= 4 && dayOfWeek <= 5) { // Thursday or Friday
                 // SA handoff reminder
@@ -1277,6 +1458,7 @@
             if (tabName === 'dashboard' || tabName === 'time') loadDashboard();
             if (tabName === 'assessments') loadAssessments();
             if (tabName === 'approvals') loadApprovals();
+            if (tabName === 'kickoff') loadKickoff();
         }
 
         // ==================== MODAL HELPERS ====================
@@ -1967,6 +2149,740 @@
                 error.textContent = `❌ Error: ${err.message}`;
                 btn.disabled = false;
                 btn.textContent = 'Submit Hours';
+            }
+        }
+
+        // ==================== LOAD KICKOFF ====================
+        async function loadKickoff() {
+            try {
+                if (!assessmentsData) {
+                    const response = await fetch(`${API_URL}/assessments`);
+                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                    assessmentsData = await response.json();
+                }
+                if (!staffData) await loadStaff();
+                renderKickoffTab();
+            } catch (error) {
+                document.getElementById('tab-kickoff').innerHTML = `
+                    <div class="error-banner"><strong>Error:</strong> ${error.message}</div>`;
+            }
+        }
+
+        // ==================== KICKOFF STATE ====================
+        let kickoffState = {
+            selectedAssessment: null,
+            phases: [],
+            milestones: { concept: { date: '', notes: '' }, midpoint: { date: '', notes: 'tentative' }, final: { date: '', notes: '' } },
+            kickoffDate: '',
+            saReviewer: '',
+            notes: ''
+        };
+
+        // ==================== RENDER KICKOFF TAB ====================
+        function renderKickoffTab() {
+            const role = getUserRole();
+            const roleName = getUserRoleName();
+            const assessments = assessmentsData?.assessments || [];
+            const userLower = (filterUser || '').toLowerCase();
+
+            // SA sees only projects assigned to them for review
+            const isSA = roleName === 'seniorArchitect';
+
+            // Projects needing kickoff: Approved but not Active
+            const needsKickoff = assessments.filter(a => 
+                a.status === 'Approved' && (!a.kickoffStatus || a.kickoffStatus === 'Not Scheduled')
+            );
+
+            // Projects with kickoff scheduled (SA needs to review)
+            const awaitingSA = assessments.filter(a => 
+                a.kickoffStatus === 'Scheduled' && !a.saConfirmed
+            );
+
+            // Projects SA confirmed, PM needs to finalize
+            const readyToFinalize = assessments.filter(a => 
+                a.kickoffStatus === 'Scheduled' && a.saConfirmed === true && a.status !== 'Active'
+            );
+
+            // Already active
+            const activeProjects = assessments.filter(a => a.status === 'Active');
+
+            // Update badge
+            const badge = document.getElementById('kickoffBadge');
+            if (isSA) {
+                const myReviews = awaitingSA.filter(a => (a.saReviewer || '').toLowerCase().includes(userLower));
+                if (myReviews.length > 0) { badge.textContent = myReviews.length; badge.style.display = 'inline'; }
+                else { badge.style.display = 'none'; }
+            } else {
+                const total = needsKickoff.length + readyToFinalize.length;
+                if (total > 0) { badge.textContent = total; badge.style.display = 'inline'; }
+                else { badge.style.display = 'none'; }
+            }
+
+            const viewLabel = filterUser ? filterUser.split(' ')[0] : 'Leadership';
+
+            // SA VIEW — simplified review interface
+            if (isSA) {
+                const myReviews = awaitingSA.filter(a => (a.saReviewer || '').toLowerCase().includes(userLower));
+                renderSAKickoffView(myReviews, viewLabel);
+                return;
+            }
+
+            // PM / LEADERSHIP VIEW
+            let html = `
+                <div class="header">
+                    <div class="header-left"><h1>🚀 Project Kickoff</h1><span class="badge user-badge">${viewLabel}'s View</span></div>
+                    <div class="header-actions">
+                        <button class="btn" onclick="assessmentsData=null;loadKickoff()">🔄 Refresh</button>
+                    </div>
+                </div>
+                <div class="summary-cards">
+                    <div class="card"><div class="card-label">Needs Kickoff</div><div class="card-value orange">${needsKickoff.length}</div></div>
+                    <div class="card"><div class="card-label">Awaiting SA Review</div><div class="card-value" style="color:#64B5F6">${awaitingSA.length}</div></div>
+                    <div class="card"><div class="card-label">Ready to Finalize</div><div class="card-value green">${readyToFinalize.length}</div></div>
+                    <div class="card"><div class="card-label">Active Projects</div><div class="card-value gold">${activeProjects.length}</div></div>
+                </div>`;
+
+            // Ready to finalize alerts
+            if (readyToFinalize.length > 0) {
+                html += `<div class="alert-banner" style="background:rgba(76,175,80,0.1);border-color:rgba(76,175,80,0.3);margin-top:16px;">
+                    <span class="alert-icon">✅</span><div class="alert-content">
+                    <div class="alert-title" style="color:#4CAF50;">${readyToFinalize.length} Project${readyToFinalize.length > 1 ? 's' : ''} Ready to Go Active</div>
+                    <div class="alert-text">${readyToFinalize.map(a => a.title).join(', ')} — SA review complete</div>
+                </div></div>`;
+            }
+
+            // Awaiting SA alerts
+            if (awaitingSA.length > 0) {
+                html += `<div class="alert-banner" style="background:rgba(100,181,246,0.1);border-color:rgba(100,181,246,0.3);margin-top:12px;">
+                    <span class="alert-icon">⏳</span><div class="alert-content">
+                    <div class="alert-title" style="color:#64B5F6;">${awaitingSA.length} Awaiting SA Review</div>
+                    <div class="alert-text">${awaitingSA.map(a => `${a.title} → ${a.saReviewer || 'Unassigned'}`).join(', ')}</div>
+                </div></div>`;
+            }
+
+            // NEEDS KICKOFF — select a project
+            if (needsKickoff.length > 0) {
+                html += `<div class="section-title" style="margin-top:24px;">📋 Projects Needing Kickoff (${needsKickoff.length})</div>`;
+                html += needsKickoff.map(a => {
+                    const totalHours = (Number(a.leadArchitectHours)||0) + (Number(a.seniorPMHours)||0) + (Number(a.assistantPMHours)||0) + (Number(a.bimVdcHours)||0) + (Number(a.coordinatorHours)||0) + (Number(a.leadershipHours)||0);
+                    return `<div class="kickoff-project-card" onclick="startKickoff('${a.id}')">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <div style="font-size:16px;font-weight:600;">${a.title || 'Untitled'}</div>
+                                <div style="color:#888;font-size:13px;margin-top:4px;">${a.projectType || ''} • ${a.package || ''} • Approved ${formatDate(a.approvedDate)}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="color:#C9A227;font-size:18px;font-weight:700;">${totalHours}h</div>
+                                <div style="color:#888;font-size:11px;">total hours</div>
+                            </div>
+                        </div>
+                        <div class="team-grid" style="margin-top:12px;">
+                            ${a.leadArchitect ? `<div class="team-member-card" style="padding:6px 10px;"><div class="team-member-role" style="font-size:10px;">Architect</div><div class="team-member-name" style="font-size:12px;">${a.leadArchitect}</div><div class="team-member-hours" style="font-size:11px;">${a.leadArchitectHours||0}h</div></div>` : ''}
+                            ${a.seniorPM ? `<div class="team-member-card" style="padding:6px 10px;"><div class="team-member-role" style="font-size:10px;">Sr PM</div><div class="team-member-name" style="font-size:12px;">${a.seniorPM}</div><div class="team-member-hours" style="font-size:11px;">${a.seniorPMHours||0}h</div></div>` : ''}
+                            ${a.bimVdc ? `<div class="team-member-card" style="padding:6px 10px;"><div class="team-member-role" style="font-size:10px;">BIM</div><div class="team-member-name" style="font-size:12px;">${a.bimVdc}</div><div class="team-member-hours" style="font-size:11px;">${a.bimVdcHours||0}h</div></div>` : ''}
+                        </div>
+                        <div style="margin-top:12px;text-align:right;"><span class="btn" style="font-size:12px;padding:6px 14px;">🚀 Start Kickoff →</span></div>
+                    </div>`;
+                }).join('');
+            }
+
+            // READY TO FINALIZE
+            if (readyToFinalize.length > 0) {
+                html += `<div class="section-title" style="margin-top:24px;">✅ Ready to Finalize (${readyToFinalize.length})</div>`;
+                html += readyToFinalize.map(a => {
+                    let plan = null;
+                    try { plan = JSON.parse(a.kickoffPlan); } catch(e) {}
+                    return `<div class="kickoff-project-card">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <div style="font-size:16px;font-weight:600;">${a.title || 'Untitled'}</div>
+                                <div style="color:#888;font-size:13px;margin-top:4px;">SA: ${a.saReviewer || '-'} confirmed ✅ ${a.saAdjustmentNotes ? `• Notes: "${a.saAdjustmentNotes}"` : ''}</div>
+                            </div>
+                            <button class="btn btn-approve" onclick="finalizeProject('${a.id}')">🟢 Set Active</button>
+                        </div>
+                        ${plan ? buildGanttPreview(plan, a.title) : ''}
+                    </div>`;
+                }).join('');
+            }
+
+            // AWAITING SA
+            if (awaitingSA.length > 0) {
+                html += `<div class="section-title" style="margin-top:24px;">⏳ Awaiting SA Review (${awaitingSA.length})</div>`;
+                html += awaitingSA.map(a => {
+                    let plan = null;
+                    try { plan = JSON.parse(a.kickoffPlan); } catch(e) {}
+                    return `<div class="kickoff-project-card" style="border-color:#64B5F6;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <div style="font-size:16px;font-weight:600;">${a.title || 'Untitled'}</div>
+                                <div style="color:#888;font-size:13px;margin-top:4px;">Assigned to ${a.saReviewer || '-'} • Kickoff: ${formatDate(a.kickoffDate)}</div>
+                            </div>
+                            <span class="status-pill" style="background:rgba(100,181,246,0.2);color:#64B5F6;">Awaiting SA</span>
+                        </div>
+                        ${plan ? buildGanttPreview(plan, a.title) : ''}
+                    </div>`;
+                }).join('');
+            }
+
+            // KICKOFF FORM (hidden until project selected)
+            html += `<div id="kickoffFormArea" style="display:none;"></div>`;
+
+            document.getElementById('tab-kickoff').innerHTML = html;
+        }
+
+        // ==================== START KICKOFF ====================
+        function startKickoff(assessmentId) {
+            const assessment = assessmentsData.assessments.find(a => a.id === assessmentId);
+            if (!assessment) return;
+
+            // Pre-populate from assessment data
+            const team = [];
+            if (assessment.leadArchitect) team.push({ member: assessment.leadArchitect, role: 'Lead Architect', totalHours: Number(assessment.leadArchitectHours) || 0 });
+            if (assessment.seniorPM) team.push({ member: assessment.seniorPM, role: 'Senior PM', totalHours: Number(assessment.seniorPMHours) || 0 });
+            if (assessment.assistantPM) team.push({ member: assessment.assistantPM, role: 'Assistant PM', totalHours: Number(assessment.assistantPMHours) || 0 });
+            if (assessment.bimVdc) team.push({ member: assessment.bimVdc, role: 'BIM/VDC', totalHours: Number(assessment.bimVdcHours) || 0 });
+            if (assessment.coordinator) team.push({ member: assessment.coordinator, role: 'Coordinator', totalHours: Number(assessment.coordinatorHours) || 0 });
+
+            kickoffState = {
+                selectedAssessment: assessment,
+                phases: [
+                    { name: 'SD', startDate: '', endDate: '', team: team.map(t => ({ member: t.member, hours: 0 })) },
+                    { name: 'DD', startDate: '', endDate: '', team: team.map(t => ({ member: t.member, hours: 0 })) },
+                    { name: 'CD', startDate: '', endDate: '', team: team.map(t => ({ member: t.member, hours: 0 })) }
+                ],
+                milestones: { concept: { date: '', notes: '' }, midpoint: { date: '', notes: 'tentative' }, final: { date: '', notes: '' } },
+                kickoffDate: new Date().toISOString().split('T')[0],
+                saReviewer: assessment.leadArchitect || '',
+                notes: '',
+                team: team
+            };
+
+            renderKickoffForm();
+        }
+
+        // ==================== RENDER KICKOFF FORM ====================
+        function renderKickoffForm() {
+            const a = kickoffState.selectedAssessment;
+            if (!a) return;
+            const totalAssessmentHours = (Number(a.leadArchitectHours)||0) + (Number(a.seniorPMHours)||0) + (Number(a.assistantPMHours)||0) + (Number(a.bimVdcHours)||0) + (Number(a.coordinatorHours)||0) + (Number(a.leadershipHours)||0);
+
+            const formArea = document.getElementById('kickoffFormArea');
+            formArea.style.display = 'block';
+            formArea.scrollIntoView({ behavior: 'smooth' });
+
+            // Build SA reviewer dropdown
+            const saOptions = (staffData?.staff || [])
+                .filter(s => s.role && (s.role.toLowerCase().includes('architect') || s.role.toLowerCase().includes('design')))
+                .map(s => `<option value="${s.name}" ${kickoffState.saReviewer === s.name ? 'selected' : ''}>${s.name}</option>`)
+                .join('');
+
+            let phasesHTML = kickoffState.phases.map((phase, pi) => {
+                const phaseTotal = phase.team.reduce((sum, t) => sum + (Number(t.hours) || 0), 0);
+                const teamRows = phase.team.map((t, ti) => `
+                    <div class="phase-team-row">
+                        <div style="font-size:13px;color:#ccc;">${t.member}</div>
+                        <input type="number" class="form-input" value="${t.hours}" min="0" placeholder="hrs" onchange="updatePhaseTeamHours(${pi}, ${ti}, this.value)" style="padding:4px 8px;font-size:13px;">
+                        <button class="remove-btn" onclick="removeTeamFromPhase(${pi}, ${ti})" title="Remove">×</button>
+                    </div>
+                `).join('');
+
+                return `<div class="phase-row" style="display:block;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <div class="phase-name-tag">${phase.name}</div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:12px;color:#888;">${phaseTotal}h</span>
+                            <button class="remove-btn" onclick="removePhase(${pi})" title="Remove phase">×</button>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Start Date</label><input type="date" class="form-input" value="${phase.startDate}" onchange="updatePhaseDate(${pi}, 'startDate', this.value)"></div>
+                        <div class="form-group"><label class="form-label">End Date</label><input type="date" class="form-input" value="${phase.endDate}" onchange="updatePhaseDate(${pi}, 'endDate', this.value)"></div>
+                    </div>
+                    <div style="margin-top:8px;">
+                        <div style="font-size:11px;color:#888;margin-bottom:4px;">Team Hours</div>
+                        ${teamRows}
+                        <button class="add-btn" style="margin-top:6px;font-size:11px;padding:4px 10px;" onclick="addTeamToPhase(${pi})">+ Add Team Member</button>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // Calculate total planned hours
+            const totalPlanned = kickoffState.phases.reduce((sum, p) => sum + p.team.reduce((s, t) => s + (Number(t.hours) || 0), 0), 0);
+            const hoursDiff = totalPlanned - totalAssessmentHours;
+            const hoursColor = hoursDiff === 0 ? '#4CAF50' : (hoursDiff > 0 ? '#f44336' : '#FF9800');
+
+            // Gantt preview
+            const ganttHTML = buildGanttFromState();
+
+            formArea.innerHTML = `
+                <div style="border-top:2px solid #C9A227;margin-top:24px;padding-top:24px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                        <h2 style="font-size:20px;">🚀 Kickoff: ${a.title || 'Untitled'}</h2>
+                        <button class="btn" onclick="cancelKickoff()" style="background:#333;">✕ Cancel</button>
+                    </div>
+
+                    <div class="kickoff-form-section">
+                        <h3>📅 Kickoff Details</h3>
+                        <div class="form-row">
+                            <div class="form-group"><label class="form-label">Kickoff Meeting Date</label><input type="date" class="form-input" value="${kickoffState.kickoffDate}" onchange="kickoffState.kickoffDate=this.value;"></div>
+                            <div class="form-group"><label class="form-label">SA Reviewer</label><select class="form-select" onchange="kickoffState.saReviewer=this.value;">${saOptions}<option value="">-- None --</option></select></div>
+                        </div>
+                        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-input" rows="2" placeholder="Kickoff notes, context, special considerations..." onchange="kickoffState.notes=this.value;">${kickoffState.notes}</textarea></div>
+                    </div>
+
+                    <div class="kickoff-form-section">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <h3>📐 Phases & Timeline</h3>
+                            <div style="font-size:13px;">
+                                Budget: <span style="color:${hoursColor};font-weight:700;">${totalPlanned}h</span> / ${totalAssessmentHours}h
+                                ${hoursDiff !== 0 ? `<span style="color:${hoursColor};font-size:11px;">(${hoursDiff > 0 ? '+' : ''}${hoursDiff}h)</span>` : ' ✓'}
+                            </div>
+                        </div>
+                        ${phasesHTML}
+                        <button class="add-btn" style="width:100%;margin-top:12px;text-align:center;" onclick="addPhase()">+ Add Phase</button>
+                    </div>
+
+                    <div class="kickoff-form-section">
+                        <h3>🎯 Milestones</h3>
+                        <div class="milestone-row">
+                            <div class="milestone-label">🔵 Concept Review</div>
+                            <input type="date" class="form-input" value="${kickoffState.milestones.concept.date}" onchange="kickoffState.milestones.concept.date=this.value; renderKickoffForm();">
+                            <input type="text" class="form-input" placeholder="Notes" value="${kickoffState.milestones.concept.notes}" onchange="kickoffState.milestones.concept.notes=this.value;">
+                        </div>
+                        <div class="milestone-row">
+                            <div class="milestone-label">🟡 Midpoint Review <span class="tentative">(tentative)</span></div>
+                            <input type="date" class="form-input" value="${kickoffState.milestones.midpoint.date}" onchange="kickoffState.milestones.midpoint.date=this.value; renderKickoffForm();">
+                            <input type="text" class="form-input" placeholder="Notes" value="${kickoffState.milestones.midpoint.notes}" onchange="kickoffState.milestones.midpoint.notes=this.value;">
+                        </div>
+                        <div class="milestone-row">
+                            <div class="milestone-label">🟢 Final Review</div>
+                            <input type="date" class="form-input" value="${kickoffState.milestones.final.date}" onchange="kickoffState.milestones.final.date=this.value; renderKickoffForm();">
+                            <input type="text" class="form-input" placeholder="Notes" value="${kickoffState.milestones.final.notes}" onchange="kickoffState.milestones.final.notes=this.value;">
+                        </div>
+                    </div>
+
+                    <div class="gantt-container">
+                        <h3 style="margin-bottom:16px;">📊 Timeline Preview</h3>
+                        ${ganttHTML}
+                    </div>
+
+                    <div class="kickoff-form-section">
+                        <h3>💰 Budget Summary</h3>
+                        <div class="budget-summary-grid">
+                            ${kickoffState.phases.map(p => {
+                                const phaseTotal = p.team.reduce((s, t) => s + (Number(t.hours) || 0), 0);
+                                const detail = p.team.filter(t => t.hours > 0).map(t => `${t.member.split(' ')[0]}: ${t.hours}h`).join(', ');
+                                return `<div class="budget-phase-card">
+                                    <div class="budget-phase-name">${p.name}</div>
+                                    <div class="budget-phase-hours">${phaseTotal}h</div>
+                                    <div class="budget-phase-detail">${detail || 'No hours assigned'}</div>
+                                    <div class="budget-phase-detail">${p.startDate ? formatDate(p.startDate) + ' → ' + formatDate(p.endDate) : 'No dates set'}</div>
+                                </div>`;
+                            }).join('')}
+                            <div class="budget-phase-card" style="border-left-color:#4CAF50;">
+                                <div class="budget-phase-name">Total</div>
+                                <div class="budget-phase-hours" style="color:#4CAF50;">${totalPlanned}h</div>
+                                <div class="budget-phase-detail">Assessment budget: ${totalAssessmentHours}h</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
+                        <button class="btn" onclick="exportKickoffPDF()" style="background:#333;">📄 Export Client PDF</button>
+                        <button class="btn btn-approve" onclick="submitKickoff()" style="padding:12px 24px;font-size:15px;">🚀 Submit Kickoff Plan</button>
+                    </div>
+                </div>`;
+        }
+
+        // ==================== KICKOFF FORM HELPERS ====================
+        function updatePhaseDate(phaseIdx, field, value) {
+            kickoffState.phases[phaseIdx][field] = value;
+            renderKickoffForm();
+        }
+
+        function updatePhaseTeamHours(phaseIdx, teamIdx, value) {
+            kickoffState.phases[phaseIdx].team[teamIdx].hours = Number(value) || 0;
+            renderKickoffForm();
+        }
+
+        function removePhase(phaseIdx) {
+            if (kickoffState.phases.length <= 1) return;
+            kickoffState.phases.splice(phaseIdx, 1);
+            renderKickoffForm();
+        }
+
+        function addPhase() {
+            const name = prompt('Phase name (e.g., SD, DD, CD, Permitting, Client Intake):');
+            if (!name) return;
+            const team = kickoffState.team ? kickoffState.team.map(t => ({ member: t.member, hours: 0 })) : [];
+            kickoffState.phases.push({ name: name.trim(), startDate: '', endDate: '', team });
+            renderKickoffForm();
+        }
+
+        function removeTeamFromPhase(phaseIdx, teamIdx) {
+            kickoffState.phases[phaseIdx].team.splice(teamIdx, 1);
+            renderKickoffForm();
+        }
+
+        function addTeamToPhase(phaseIdx) {
+            const allStaff = staffData?.staff || [];
+            const name = prompt('Team member name:');
+            if (!name) return;
+            kickoffState.phases[phaseIdx].team.push({ member: name.trim(), hours: 0 });
+            renderKickoffForm();
+        }
+
+        function cancelKickoff() {
+            kickoffState.selectedAssessment = null;
+            document.getElementById('kickoffFormArea').style.display = 'none';
+            document.getElementById('kickoffFormArea').innerHTML = '';
+        }
+
+        // ==================== GANTT CHART BUILDER ====================
+        function buildGanttFromState() {
+            const phases = kickoffState.phases.filter(p => p.startDate && p.endDate);
+            const milestones = kickoffState.milestones;
+            
+            if (phases.length === 0) return '<div style="color:#666;text-align:center;padding:20px;">Add phase dates to see timeline preview</div>';
+
+            return buildGantt(phases, milestones);
+        }
+
+        function buildGanttPreview(plan, title) {
+            if (!plan || !plan.phases) return '';
+            const phases = plan.phases.filter(p => p.startDate && p.endDate);
+            if (phases.length === 0) return '';
+            return `<div style="margin-top:12px;">${buildGantt(phases, plan.milestones || {})}</div>`;
+        }
+
+        function buildGantt(phases, milestones) {
+            // Find date range
+            let allDates = [];
+            phases.forEach(p => {
+                if (p.startDate) allDates.push(new Date(p.startDate));
+                if (p.endDate) allDates.push(new Date(p.endDate));
+            });
+            Object.values(milestones || {}).forEach(m => {
+                if (m && m.date) allDates.push(new Date(m.date));
+            });
+
+            if (allDates.length === 0) return '';
+
+            const minDate = new Date(Math.min(...allDates));
+            const maxDate = new Date(Math.max(...allDates));
+            
+            // Pad by 2 weeks on each side
+            minDate.setDate(minDate.getDate() - 14);
+            maxDate.setDate(maxDate.getDate() + 14);
+
+            const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+            if (totalDays <= 0) return '';
+
+            function dayOffset(dateStr) {
+                const d = new Date(dateStr);
+                return Math.max(0, Math.ceil((d - minDate) / (1000 * 60 * 60 * 24)));
+            }
+
+            function pctPos(dateStr) {
+                return (dayOffset(dateStr) / totalDays * 100).toFixed(1);
+            }
+
+            // Generate month headers
+            let months = [];
+            let d = new Date(minDate);
+            d.setDate(1);
+            while (d <= maxDate) {
+                months.push(d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+                d.setMonth(d.getMonth() + 1);
+            }
+
+            let monthHeaders = months.map(m => `<div class="gantt-month">${m}</div>`).join('');
+
+            // Phase bars
+            const phaseColorMap = { 'SD': 'sd', 'DD': 'dd', 'CD': 'cd', 'Permitting': 'permitting' };
+            let phaseRows = phases.map(p => {
+                const left = pctPos(p.startDate);
+                const right = pctPos(p.endDate);
+                const width = (right - left).toFixed(1);
+                const colorClass = phaseColorMap[p.name] || 'default';
+                const phaseHrs = (p.team || []).reduce((s, t) => s + (Number(t.hours) || 0), 0);
+                return `<div class="gantt-row">
+                    <div class="gantt-row-label">${p.name} (${phaseHrs}h)</div>
+                    <div class="gantt-row-bar-area">
+                        <div class="gantt-bar ${colorClass}" style="left:${left}%;width:${Math.max(Number(width), 2)}%;">${p.name}</div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // Milestones
+            let milestoneHTML = '';
+            const msMap = [
+                { key: 'concept', label: 'Concept', color: '#64B5F6' },
+                { key: 'midpoint', label: 'Mid', color: '#FFB74D' },
+                { key: 'final', label: 'Final', color: '#4CAF50' }
+            ];
+
+            msMap.forEach(ms => {
+                const m = (milestones || {})[ms.key];
+                if (m && m.date) {
+                    const pos = pctPos(m.date);
+                    milestoneHTML += `
+                        <div class="gantt-milestone-line" style="left:${pos}%;"></div>
+                        <div class="gantt-milestone" style="left:${pos}%;"></div>
+                        <div class="gantt-milestone-label" style="left:${pos}%;">${ms.label}</div>`;
+                }
+            });
+
+            return `<div class="gantt-chart">
+                <div class="gantt-header">
+                    <div class="gantt-label-col"></div>
+                    <div class="gantt-timeline-col">${monthHeaders}</div>
+                </div>
+                ${phaseRows}
+                <div class="gantt-row">
+                    <div class="gantt-row-label" style="font-size:11px;color:#C9A227;">Milestones</div>
+                    <div class="gantt-row-bar-area" style="height:24px;position:relative;">
+                        ${milestoneHTML}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // ==================== SA KICKOFF REVIEW VIEW ====================
+        function renderSAKickoffView(reviews, viewLabel) {
+            let html = `
+                <div class="header">
+                    <div class="header-left"><h1>🚀 Kickoff Review</h1><span class="badge" style="background:rgba(100,181,246,0.2);color:#64B5F6;">${viewLabel} — SA Review</span></div>
+                    <div class="header-actions"><button class="btn" onclick="assessmentsData=null;loadKickoff()">🔄 Refresh</button></div>
+                </div>`;
+
+            if (reviews.length === 0) {
+                html += `<div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">No Pending Reviews</div><div class="empty-state-text">You'll be notified when a PM assigns you a kickoff to review.</div></div>`;
+            } else {
+                reviews.forEach(a => {
+                    let plan = null;
+                    try { plan = JSON.parse(a.kickoffPlan); } catch(e) {}
+
+                    // Show the SA's scope — their hours per phase
+                    const userLower = (filterUser || '').toLowerCase();
+                    let scopeHTML = '';
+                    if (plan && plan.phases) {
+                        scopeHTML = `<table class="sa-scope-table">
+                            <tr><th>Phase</th><th>Dates</th><th>Your Hours</th></tr>
+                            ${plan.phases.map(p => {
+                                const myEntry = p.team.find(t => t.member.toLowerCase().includes(userLower));
+                                const hrs = myEntry ? myEntry.hours : 0;
+                                return `<tr><td style="color:#C9A227;font-weight:600;">${p.name}</td><td>${p.startDate ? formatDate(p.startDate) + ' → ' + formatDate(p.endDate) : '-'}</td><td style="font-weight:600;">${hrs}h</td></tr>`;
+                            }).join('')}
+                        </table>`;
+                    }
+
+                    // Gantt preview
+                    const ganttHTML = plan ? buildGanttPreview(plan, a.title) : '';
+
+                    html += `<div class="sa-review-card">
+                        <h3>🔍 Review: ${a.title || 'Untitled'}</h3>
+                        <div style="color:#888;font-size:13px;margin:8px 0;">Kickoff: ${formatDate(a.kickoffDate)} • PM: ${a.seniorPM || '-'}</div>
+                        ${scopeHTML}
+                        ${ganttHTML}
+                        <div class="form-group" style="margin-top:16px;">
+                            <label class="form-label">Adjustment Notes (optional)</label>
+                            <textarea class="form-input" id="saNotesFor${a.id}" rows="2" placeholder="Any scope/hours adjustments needed? Leave blank if everything looks good."></textarea>
+                        </div>
+                        <div style="display:flex;gap:12px;margin-top:16px;">
+                            <button class="btn btn-approve" onclick="confirmSAReview('${a.id}')">✅ Confirm Scope</button>
+                        </div>
+                    </div>`;
+                });
+            }
+
+            document.getElementById('tab-kickoff').innerHTML = html;
+        }
+
+        // ==================== SA CONFIRM REVIEW ====================
+        async function confirmSAReview(assessmentId) {
+            const notes = document.getElementById(`saNotesFor${assessmentId}`)?.value || '';
+            
+            try {
+                const response = await fetch(`${API_URL}/assessments/${assessmentId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        saConfirmed: true,
+                        saAdjustmentNotes: notes,
+                        kickoffStatus: 'Confirmed'
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Review confirmed! PM has been notified.');
+                    assessmentsData = null;
+                    loadKickoff();
+                } else { throw new Error('Failed'); }
+            } catch (e) { alert('Error: ' + e.message); }
+        }
+
+        // ==================== SUBMIT KICKOFF ====================
+        async function submitKickoff() {
+            const a = kickoffState.selectedAssessment;
+            if (!a) return;
+
+            // Validate
+            if (!kickoffState.kickoffDate) { alert('Please set a kickoff meeting date.'); return; }
+            if (kickoffState.phases.length === 0) { alert('Please add at least one phase.'); return; }
+
+            const hasAnyDates = kickoffState.phases.some(p => p.startDate && p.endDate);
+            if (!hasAnyDates) { alert('Please set dates for at least one phase.'); return; }
+
+            if (!confirm(`Submit kickoff plan for "${a.title}"?\n\nThis will create ${kickoffState.phases.length} phase(s) in the Time Log and notify ${kickoffState.saReviewer || 'no SA'} for review.`)) return;
+
+            try {
+                const btn = event.target;
+                btn.disabled = true;
+                btn.textContent = '⏳ Creating...';
+
+                const response = await fetch(`${API_URL}/kickoff`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        assessmentId: a.id,
+                        clientName: a.title || a.clientName || 'Untitled',
+                        kickoffDate: kickoffState.kickoffDate,
+                        saReviewer: kickoffState.saReviewer,
+                        pmName: filterUser || 'Tammia Marcano',
+                        phases: kickoffState.phases,
+                        milestones: kickoffState.milestones,
+                        totalBudget: kickoffState.phases.reduce((sum, p) => sum + p.team.reduce((s, t) => s + (Number(t.hours) || 0), 0), 0),
+                        notes: kickoffState.notes
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success || result.created > 0) {
+                    alert(`Kickoff plan submitted!\n${result.created} phase entries created.\n${kickoffState.saReviewer ? kickoffState.saReviewer + ' has been notified for review.' : ''}`);
+                    kickoffState.selectedAssessment = null;
+                    assessmentsData = null;
+                    dashboardData = null;
+                    loadKickoff();
+                } else {
+                    throw new Error(JSON.stringify(result.details?.errors || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        // ==================== FINALIZE PROJECT ====================
+        async function finalizeProject(assessmentId) {
+            if (!confirm('Set this project as Active? Phase tracking will begin.')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/assessments/${assessmentId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'Active',
+                        kickoffStatus: 'Complete'
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Project is now Active! 🟢');
+                    assessmentsData = null;
+                    dashboardData = null;
+                    loadKickoff();
+                } else { throw new Error('Failed'); }
+            } catch (e) { alert('Error: ' + e.message); }
+        }
+
+        // ==================== CLIENT PDF EXPORT ====================
+        function exportKickoffPDF() {
+            const a = kickoffState.selectedAssessment;
+            if (!a) return;
+
+            const totalPlanned = kickoffState.phases.reduce((sum, p) => sum + p.team.reduce((s, t) => s + (Number(t.hours) || 0), 0), 0);
+
+            // Build a print-friendly HTML document
+            const phaseTableRows = kickoffState.phases.map(p => {
+                const phaseHrs = p.team.reduce((s, t) => s + (Number(t.hours) || 0), 0);
+                return `<tr>
+                    <td style="font-weight:600;color:#8B6914;">${p.name}</td>
+                    <td>${p.startDate ? new Date(p.startDate).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '-'}</td>
+                    <td>${p.endDate ? new Date(p.endDate).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '-'}</td>
+                    <td style="font-weight:600;">${phaseHrs}h</td>
+                    <td style="color:#666;font-size:11px;">${p.team.filter(t=>t.hours>0).map(t=>t.member.split(' ')[0]+': '+t.hours+'h').join(', ')}</td>
+                </tr>`;
+            }).join('');
+
+            const milestoneRows = [
+                { label: 'Concept Review', m: kickoffState.milestones.concept, color: '#4a90d9' },
+                { label: 'Midpoint Review (Tentative)', m: kickoffState.milestones.midpoint, color: '#d4a017' },
+                { label: 'Final Review', m: kickoffState.milestones.final, color: '#2e7d32' }
+            ].filter(ms => ms.m && ms.m.date).map(ms => `<tr>
+                <td><span style="display:inline-block;width:10px;height:10px;background:${ms.color};border-radius:2px;margin-right:6px;"></span>${ms.label}</td>
+                <td>${new Date(ms.m.date).toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'})}</td>
+                <td>${ms.m.notes || '-'}</td>
+            </tr>`).join('');
+
+            const pdfHTML = `
+            <div id="kickoffPdfContent" style="font-family:'Segoe UI',Roboto,sans-serif;max-width:800px;margin:0 auto;padding:40px;background:#fff;color:#222;">
+                <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #8B6914;padding-bottom:20px;margin-bottom:30px;">
+                    <div>
+                        <div style="font-size:28px;font-weight:700;color:#1a1a1a;">STUDIO RNB</div>
+                        <div style="font-size:12px;color:#888;letter-spacing:2px;margin-top:2px;">ARCHITECTURE & DESIGN</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:18px;font-weight:600;color:#8B6914;">Project Kickoff Plan</div>
+                        <div style="color:#888;font-size:12px;">${new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'})}</div>
+                    </div>
+                </div>
+
+                <div style="background:#f8f6f0;border-radius:8px;padding:20px;margin-bottom:24px;">
+                    <div style="font-size:22px;font-weight:700;color:#1a1a1a;margin-bottom:8px;">${a.title || 'Untitled Project'}</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;color:#555;font-size:13px;">
+                        <div><strong>Type:</strong> ${a.projectType || '-'}</div>
+                        <div><strong>Package:</strong> ${a.package || '-'}</div>
+                        <div><strong>Kickoff:</strong> ${kickoffState.kickoffDate ? new Date(kickoffState.kickoffDate).toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'}) : '-'}</div>
+                    </div>
+                </div>
+
+                <h3 style="font-size:16px;color:#8B6914;border-bottom:1px solid #ddd;padding-bottom:8px;margin:24px 0 12px;">Phase Timeline</h3>
+                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                    <tr style="background:#f5f5f5;"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Phase</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Start</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">End</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Hours</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Team</th></tr>
+                    ${phaseTableRows}
+                    <tr style="background:#f8f6f0;font-weight:700;"><td style="padding:8px 12px;">Total</td><td></td><td></td><td style="padding:8px 12px;color:#8B6914;">${totalPlanned}h</td><td></td></tr>
+                </table>
+
+                ${milestoneRows ? `
+                <h3 style="font-size:16px;color:#8B6914;border-bottom:1px solid #ddd;padding-bottom:8px;margin:24px 0 12px;">Key Milestones</h3>
+                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                    <tr style="background:#f5f5f5;"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Milestone</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Date</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Notes</th></tr>
+                    ${milestoneRows}
+                </table>` : ''}
+
+                <div style="margin-top:40px;padding-top:20px;border-top:1px solid #ddd;color:#999;font-size:11px;text-align:center;">
+                    Studio RNB • Architecture & Design • Generated ${new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'})}
+                </div>
+            </div>`;
+
+            // Create temporary element for pdf generation
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = pdfHTML;
+            document.body.appendChild(tempDiv);
+
+            if (typeof html2pdf !== 'undefined') {
+                html2pdf().set({
+                    margin: [10, 10, 10, 10],
+                    filename: `Studio_RNB_Kickoff_${(a.title || 'Project').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                }).from(tempDiv.firstElementChild).save().then(() => {
+                    document.body.removeChild(tempDiv);
+                });
+            } else {
+                alert('PDF export loading... please try again.');
+                document.body.removeChild(tempDiv);
             }
         }
 
