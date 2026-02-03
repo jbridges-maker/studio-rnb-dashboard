@@ -2532,7 +2532,7 @@
                                 <div style="font-size:16px;font-weight:600;">${a.title || 'Untitled'}</div>
                                 <div style="color:#888;font-size:13px;margin-top:4px;">SA: ${a.saReviewer || '-'} confirmed ✅ ${a.saAdjustmentNotes ? `• Notes: "${a.saAdjustmentNotes}"` : ''}</div>
                             </div>
-                            <button class="btn btn-approve" id="finalizeBtn${idx}">🟢 Set Active</button>
+                            <button class="btn btn-approve" onclick="doFinalizeProject('${a.id}')">🟢 Set Active</button>
                         </div>
                     </div>`;
                 }).join('');
@@ -2558,14 +2558,6 @@
             html += `<div id="kickoffFormArea" style="display:none;"></div>`;
 
             document.getElementById('tab-kickoff').innerHTML = html;
-
-            // Wire up finalize buttons IMMEDIATELY after innerHTML (same pattern as submit button)
-            readyToFinalize.forEach(function(a, idx) {
-                var btn = document.getElementById('finalizeBtn' + idx);
-                if (btn) {
-                    btn.onclick = function() { doFinalizeProject(a.id); };
-                }
-            });
         }
 
         // ==================== START KICKOFF ====================
