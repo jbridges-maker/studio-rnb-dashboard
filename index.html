@@ -2877,8 +2877,29 @@
 
         // ==================== FINALIZE PROJECT ====================
         function doFinalizeProject(assessmentId) {
-            if (!confirm('Set this project as Active? Phase tracking will begin and Client Portal will be updated.')) return;
-            
+            // Show confirmation modal
+            var overlay = document.createElement('div');
+            overlay.id = 'finalizeConfirmModal';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:10000;';
+            overlay.innerHTML = '<div style="background:#1E1E1E;border:1px solid #333;border-radius:12px;padding:28px;max-width:400px;width:90%;">' +
+                '<div style="font-size:18px;font-weight:600;color:#4CAF50;margin-bottom:16px;">🟢 Set Project Active?</div>' +
+                '<div style="color:#ccc;font-size:14px;line-height:1.6;margin-bottom:20px;">This will begin phase tracking and update the Client Portal. The client will see their project status on Softr.</div>' +
+                '<div style="display:flex;gap:12px;justify-content:flex-end;">' +
+                '<button id="finalizeCancel" style="background:#333;border:1px solid #555;color:#ccc;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;">Cancel</button>' +
+                '<button id="finalizeYes" style="background:#4CAF50;border:none;color:#fff;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">Set Active</button>' +
+                '</div></div>';
+            document.body.appendChild(overlay);
+
+            document.getElementById('finalizeCancel').onclick = function() {
+                document.getElementById('finalizeConfirmModal').remove();
+            };
+            document.getElementById('finalizeYes').onclick = function() {
+                document.getElementById('finalizeConfirmModal').remove();
+                executeFinalizeProject(assessmentId);
+            };
+        }
+
+        function executeFinalizeProject(assessmentId) {
             fetch(API_URL + '/assessments/' + assessmentId, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -3218,26 +3239,37 @@
         }
 
         // ==================== SA CONFIRM REVIEW ====================
-        async function confirmSAReview(assessmentId) {
-            const notes = document.getElementById(`saNotesFor${assessmentId}`)?.value || '';
+        function confirmSAReview(assessmentId) {
+            var notes = document.getElementById('saNotesFor' + assessmentId);
+            var notesValue = notes ? notes.value : '';
             
-            try {
-                const response = await fetch(`${API_URL}/assessments/${assessmentId}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        saConfirmed: true,
-                        saAdjustmentNotes: notes,
-                        kickoffStatus: 'Confirmed'
-                    })
-                });
-                const result = await response.json();
+            var btn = event.target;
+            if (btn) { btn.disabled = true; btn.textContent = 'Confirming...'; }
+            
+            fetch(API_URL + '/assessments/' + assessmentId, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    saConfirmed: true,
+                    saAdjustmentNotes: notesValue,
+                    kickoffStatus: 'Confirmed'
+                })
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(result) {
                 if (result.success) {
-                    alert('Review confirmed! PM has been notified.');
+                    alert('Review confirmed! PM has been notified and can now set the project to Active.');
                     assessmentsData = null;
                     loadKickoff();
-                } else { throw new Error('Failed'); }
-            } catch (e) { alert('Error: ' + e.message); }
+                } else { 
+                    if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Scope & Hours'; }
+                    alert('Failed to confirm: ' + JSON.stringify(result));
+                }
+            })
+            .catch(function(e) { 
+                if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Scope & Hours'; }
+                alert('Error: ' + e.message); 
+            });
         }
 
         // ==================== HOUR REQUEST (on Dashboard) ====================
