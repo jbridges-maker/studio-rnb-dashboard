@@ -1845,6 +1845,8 @@
                 const pct = alloc > 0 ? Math.round((logged / alloc) * 100) : 0;
                 const progressClass = getProgressClass(pct);
                 const phaseClass = getPhaseClass(phase.phase);
+                const dueDate = phase.endDate ? formatDate(phase.endDate) : '';
+                const isOverdue = phase.endDate && new Date(phase.endDate) < new Date() && pct < 100;
                 
                 return `
                     <div class="phase-card collapsed">
@@ -1852,6 +1854,7 @@
                             <div class="phase-info">
                                 <span class="phase-name">${phase.entry}</span>
                                 <span class="phase-tag ${phaseClass}">${phase.phase}</span>
+                                ${dueDate ? `<span style="font-size:11px;color:${isOverdue ? '#f44336' : '#888'};margin-left:8px;">${isOverdue ? '⚠️ ' : '📅 '}Due: ${dueDate}</span>` : ''}
                             </div>
                             <div class="phase-stats">
                                 <div class="phase-stat"><div class="phase-stat-label">Budget</div><div class="phase-stat-value">${alloc}h</div></div>
