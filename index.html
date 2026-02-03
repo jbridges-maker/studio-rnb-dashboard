@@ -2741,6 +2741,21 @@
 
         // ==================== KICKOFF SUBMIT (standalone) ====================
         function doSubmitKickoff() {
+            // Debug: show visible feedback on screen
+            var debugDiv = document.createElement('div');
+            debugDiv.style.cssText = 'position:fixed;top:10px;right:10px;background:red;color:white;padding:20px;z-index:99999;border-radius:8px;font-size:16px;';
+            debugDiv.id = 'kickoffDebug';
+            var a = kickoffState.selectedAssessment;
+            var debugMsg = 'doSubmitKickoff called. ';
+            debugMsg += 'Assessment: ' + (a ? a.title : 'NULL') + '. ';
+            debugMsg += 'KickoffDate: ' + (kickoffState.kickoffDate || 'EMPTY') + '. ';
+            debugMsg += 'Phases: ' + kickoffState.phases.length + '. ';
+            if (kickoffState.phases.length > 0) {
+                debugMsg += 'Phase[0] dates: ' + (kickoffState.phases[0].startDate || 'NONE') + ' to ' + (kickoffState.phases[0].endDate || 'NONE');
+            }
+            debugDiv.textContent = debugMsg;
+            document.body.appendChild(debugDiv);
+            setTimeout(function() { var d = document.getElementById('kickoffDebug'); if (d) d.remove(); }, 8000);
             var a = kickoffState.selectedAssessment;
             if (!a) { alert('No project selected.'); return; }
             if (!kickoffState.kickoffDate) { alert('Please set a kickoff meeting date.'); return; }
@@ -2752,14 +2767,37 @@
             }
             if (!hasAnyDates) { alert('Please set dates for at least one phase.'); return; }
 
+            // Show custom confirmation modal instead of confirm()
+            var overlay = document.createElement('div');
+            overlay.id = 'kickoffConfirmModal';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:10000;';
+            overlay.innerHTML = '<div style="background:#1E1E1E;border:1px solid #333;border-radius:12px;padding:28px;max-width:440px;width:90%;">' +
+                '<div style="font-size:18px;font-weight:600;color:#C9A227;margin-bottom:12px;">🚀 Submit Kickoff Plan</div>' +
+                '<div style="color:#ccc;font-size:14px;line-height:1.6;margin-bottom:8px;">Project: <strong>' + (a.title || 'Untitled') + '</strong></div>' +
+                '<div style="color:#aaa;font-size:13px;margin-bottom:6px;">This will create <strong>' + kickoffState.phases.length + ' phase(s)</strong> in the Phases database.</div>' +
+                '<div style="color:#aaa;font-size:13px;margin-bottom:20px;">SA Reviewer: <strong>' + (kickoffState.saReviewer || 'None') + '</strong> will be notified.</div>' +
+                '<div style="display:flex;gap:12px;justify-content:flex-end;">' +
+                '<button id="kickoffConfirmCancel" style="background:#333;border:1px solid #555;color:#ccc;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;">Cancel</button>' +
+                '<button id="kickoffConfirmYes" style="background:#4CAF50;border:none;color:#fff;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">✅ Confirm & Submit</button>' +
+                '</div></div>';
+            document.body.appendChild(overlay);
+
+            document.getElementById('kickoffConfirmCancel').onclick = function() {
+                document.getElementById('kickoffConfirmModal').remove();
+            };
+            document.getElementById('kickoffConfirmYes').onclick = function() {
+                document.getElementById('kickoffConfirmModal').remove();
+                executeKickoffSubmit(a);
+            };
+        }
+
+        function executeKickoffSubmit(a) {
             var totalBudget = 0;
             for (var i = 0; i < kickoffState.phases.length; i++) {
                 for (var j = 0; j < kickoffState.phases[i].team.length; j++) {
                     totalBudget += (Number(kickoffState.phases[i].team[j].hours) || 0);
                 }
             }
-
-            if (!confirm('Submit kickoff plan for "' + a.title + '"?\n\nThis will create ' + kickoffState.phases.length + ' phase(s) and notify ' + (kickoffState.saReviewer || 'no SA') + ' for review.')) return;
 
             var btn = document.getElementById('ksSubmit');
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Creating...'; }
@@ -2807,72 +2845,55 @@
             var a = kickoffState.selectedAssessment;
             if (!a) { alert('No project selected.'); return; }
 
+            // Build a summary to push to Client Portal
+            var phaseLines = [];
             var totalPlanned = 0;
-            for (var i = 0; i < kickoffState.phases.length; i++) {
-                for (var j = 0; j < kickoffState.phases[i].team.length; j++) {
-                    totalPlanned += (Number(kickoffState.phases[i].team[j].hours) || 0);
-                }
-            }
-
-            var phaseRows = '';
             for (var i = 0; i < kickoffState.phases.length; i++) {
                 var p = kickoffState.phases[i];
                 var phaseHrs = 0;
-                var teamDetail = [];
                 for (var j = 0; j < p.team.length; j++) {
                     phaseHrs += (Number(p.team[j].hours) || 0);
-                    if (p.team[j].hours > 0) {
-                        teamDetail.push(p.team[j].member.split(' ')[0] + ': ' + p.team[j].hours + 'h');
-                    }
                 }
-                var startStr = p.startDate ? new Date(p.startDate).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '-';
-                var endStr = p.endDate ? new Date(p.endDate).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '-';
-                phaseRows += '<tr><td style="font-weight:600;color:#8B6914;">' + p.name + '</td><td>' + startStr + '</td><td>' + endStr + '</td><td style="font-weight:600;">' + phaseHrs + 'h</td><td style="color:#666;font-size:11px;">' + teamDetail.join(', ') + '</td></tr>';
+                totalPlanned += phaseHrs;
+                var dateRange = (p.startDate && p.endDate) ? formatDate(p.startDate) + ' → ' + formatDate(p.endDate) : 'TBD';
+                phaseLines.push(p.name + ': ' + phaseHrs + 'h (' + dateRange + ')');
             }
 
-            var msRows = '';
-            var milestoneData = [
-                { label: 'Concept Review', m: kickoffState.milestones.concept, color: '#4a90d9' },
-                { label: 'Midpoint Review', m: kickoffState.milestones.midpoint, color: '#d4a017' },
-                { label: 'Final Review', m: kickoffState.milestones.final, color: '#2e7d32' }
-            ];
-            for (var i = 0; i < milestoneData.length; i++) {
-                var ms = milestoneData[i];
-                if (ms.m && ms.m.date) {
-                    msRows += '<tr><td><span style="display:inline-block;width:10px;height:10px;background:' + ms.color + ';border-radius:2px;margin-right:6px;"></span>' + ms.label + '</td><td>' + new Date(ms.m.date).toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'}) + '</td><td>' + (ms.m.notes || '-') + '</td></tr>';
+            var summary = 'Kickoff Plan — ' + phaseLines.join(' | ') + ' | Total: ' + totalPlanned + 'h';
+
+            // Get the Client Portal record ID from the assessment's relation
+            var clientPortalId = a.clientPortalId;
+            if (!clientPortalId) {
+                alert('No Client Portal record linked to this assessment. Submit the kickoff plan first to create the link.');
+                return;
+            }
+
+            var btn = document.getElementById('ksExport');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing...'; }
+
+            // Write summary to Client Portal's Latest Update field
+            fetch(API_URL + '/clients/' + clientPortalId, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    'Latest Update': summary,
+                    'Project Tracker': 'Concept',
+                    'Project Progress': 0
+                })
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(result) {
+                if (result.success) {
+                    alert('Client Portal updated! Softr will reflect this immediately.\n\nLatest Update: ' + summary);
+                } else {
+                    alert('Failed to update Client Portal: ' + JSON.stringify(result));
                 }
-            }
-
-            var dateStr = new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'});
-            var kickoffDateStr = kickoffState.kickoffDate ? new Date(kickoffState.kickoffDate).toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'}) : '-';
-
-            var pdfBody = '<div style="font-family:Segoe UI,Roboto,sans-serif;max-width:800px;margin:0 auto;padding:40px;background:#fff;color:#222;">' +
-                '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #8B6914;padding-bottom:20px;margin-bottom:30px;">' +
-                '<div><div style="font-size:28px;font-weight:700;color:#1a1a1a;">STUDIO RNB</div><div style="font-size:12px;color:#888;letter-spacing:2px;margin-top:2px;">ARCHITECTURE & DESIGN</div></div>' +
-                '<div style="text-align:right;"><div style="font-size:18px;font-weight:600;color:#8B6914;">Project Kickoff Plan</div><div style="color:#888;font-size:12px;">' + dateStr + '</div></div></div>' +
-                '<div style="background:#f8f6f0;border-radius:8px;padding:20px;margin-bottom:24px;">' +
-                '<div style="font-size:22px;font-weight:700;color:#1a1a1a;margin-bottom:8px;">' + (a.title || 'Untitled Project') + '</div>' +
-                '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;color:#555;font-size:13px;">' +
-                '<div><strong>Type:</strong> ' + (a.projectType || '-') + '</div>' +
-                '<div><strong>Package:</strong> ' + (a.package || '-') + '</div>' +
-                '<div><strong>Kickoff:</strong> ' + kickoffDateStr + '</div></div></div>' +
-                '<h3 style="font-size:16px;color:#8B6914;border-bottom:1px solid #ddd;padding-bottom:8px;margin:24px 0 12px;">Phase Timeline</h3>' +
-                '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
-                '<tr style="background:#f5f5f5;"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Phase</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Start</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">End</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Hours</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Team</th></tr>' +
-                phaseRows +
-                '<tr style="background:#f8f6f0;font-weight:700;"><td style="padding:8px 12px;">Total</td><td></td><td></td><td style="padding:8px 12px;color:#8B6914;">' + totalPlanned + 'h</td><td></td></tr></table>' +
-                (msRows ? '<h3 style="font-size:16px;color:#8B6914;border-bottom:1px solid #ddd;padding-bottom:8px;margin:24px 0 12px;">Key Milestones</h3><table style="width:100%;border-collapse:collapse;font-size:13px;"><tr style="background:#f5f5f5;"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Milestone</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Date</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #ddd;">Notes</th></tr>' + msRows + '</table>' : '') +
-                '<div style="margin-top:40px;padding-top:20px;border-top:1px solid #ddd;color:#999;font-size:11px;text-align:center;">Studio RNB &bull; Architecture & Design &bull; Generated ' + dateStr + '</div></div>';
-
-            // Open in new window for printing
-            var win = window.open('', '_blank');
-            if (win) {
-                win.document.write('<!DOCTYPE html><html><head><title>Studio RNB Kickoff - ' + (a.title || 'Project') + '</title><style>body{margin:0;padding:0;}</style></head><body>' + pdfBody + '</body></html>');
-                win.document.close();
-                setTimeout(function() { win.print(); }, 600);
-            } else {
-                alert('Please allow popups to export PDF.');
-            }
+                if (btn) { btn.disabled = false; btn.textContent = '📤 Sync to Client Portal'; }
+            })
+            .catch(function(err) {
+                alert('Error: ' + err.message);
+                if (btn) { btn.disabled = false; btn.textContent = '📤 Sync to Client Portal'; }
+            });
         }
 
         // ==================== FINALIZE PROJECT ====================
