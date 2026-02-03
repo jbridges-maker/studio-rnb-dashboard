@@ -2532,7 +2532,7 @@
                                 <div style="font-size:16px;font-weight:600;">${a.title || 'Untitled'}</div>
                                 <div style="color:#888;font-size:13px;margin-top:4px;">SA: ${a.saReviewer || '-'} confirmed ✅ ${a.saAdjustmentNotes ? `• Notes: "${a.saAdjustmentNotes}"` : ''}</div>
                             </div>
-                            <button class="btn btn-approve finalize-btn" data-id="${a.id}">🟢 Set Active</button>
+                            <button class="btn btn-approve" onclick="window.doFinalizeProject('${a.id}')">🟢 Set Active</button>
                         </div>
                     </div>`;
                 }).join('');
@@ -2561,14 +2561,6 @@
             html += `<div id="kickoffFormArea" style="display:none;"></div>`;
 
             document.getElementById('tab-kickoff').innerHTML = html;
-
-            // Wire up finalize buttons after innerHTML is set
-            document.querySelectorAll('.finalize-btn').forEach(function(btn) {
-                btn.onclick = function() {
-                    var assessmentId = btn.getAttribute('data-id');
-                    doFinalizeProject(assessmentId);
-                };
-            });
         }
 
         // ==================== START KICKOFF ====================
@@ -2887,7 +2879,7 @@
         }
 
         // ==================== FINALIZE PROJECT ====================
-        function doFinalizeProject(assessmentId) {
+        window.doFinalizeProject = function(assessmentId) {
             if (!confirm('Set this project as Active? Phase tracking will begin and Client Portal will be updated.')) return;
             
             fetch(API_URL + '/assessments/' + assessmentId, {
@@ -2905,14 +2897,15 @@
                     assessmentsData = null;
                     dashboardData = null;
                     pendingClientsData = null;
-                    document.getElementById('kickoffActionBar').style.display = 'none';
+                    var actionBar = document.getElementById('kickoffActionBar');
+                    if (actionBar) actionBar.style.display = 'none';
                     loadKickoff();
                 } else { 
                     alert('Failed to set project active: ' + JSON.stringify(result));
                 }
             })
             .catch(function(e) { alert('Error: ' + e.message); });
-        }
+        };
 
         // ==================== KICKOFF FORM HELPERS ====================
         function updatePhaseDate(phaseIdx, field, value) {
