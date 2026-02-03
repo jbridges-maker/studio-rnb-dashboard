@@ -2883,6 +2883,7 @@
 
         // ==================== FINALIZE PROJECT ====================
         function finalizeProject(assessmentId) {
+            alert('finalizeProject called with ID: ' + assessmentId);
             if (!confirm('Set this project as Active? Phase tracking will begin and Client Portal will be updated.')) return;
             
             fetch(API_URL + '/assessments/' + assessmentId, {
