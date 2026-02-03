@@ -2436,7 +2436,7 @@
 
             // Projects SA confirmed, PM needs to finalize
             const readyToFinalize = assessments.filter(a => 
-                a.kickoffStatus === 'Scheduled' && a.saConfirmed === true && a.status !== 'Active'
+                (a.kickoffStatus === 'Confirmed' || (a.kickoffStatus === 'Scheduled' && a.saConfirmed === true)) && a.status !== 'Active'
             );
 
             // Already active
@@ -3150,37 +3150,70 @@
                 html += `<div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">No Pending Reviews</div><div class="empty-state-text">You'll be notified when a PM assigns you a kickoff to review.</div></div>`;
             } else {
                 reviews.forEach(a => {
-                    let plan = null;
-                    try { plan = JSON.parse(a.kickoffPlan); } catch(e) {}
+                    // Calculate total hours from assessment
+                    const totalHours = (Number(a.leadArchitectHours)||0) + (Number(a.seniorPMHours)||0) + (Number(a.assistantPMHours)||0) + (Number(a.bimVdcHours)||0) + (Number(a.coordinatorHours)||0) + (Number(a.leadershipHours)||0);
+                    
+                    // Build team breakdown
+                    const teamBreakdown = [];
+                    if (a.leadArchitect) teamBreakdown.push({ role: 'Lead Architect', name: a.leadArchitect, hours: a.leadArchitectHours || 0 });
+                    if (a.seniorPM) teamBreakdown.push({ role: 'Senior PM', name: a.seniorPM, hours: a.seniorPMHours || 0 });
+                    if (a.assistantPM) teamBreakdown.push({ role: 'Assistant PM', name: a.assistantPM, hours: a.assistantPMHours || 0 });
+                    if (a.bimVdc) teamBreakdown.push({ role: 'BIM/VDC', name: a.bimVdc, hours: a.bimVdcHours || 0 });
+                    if (a.coordinator) teamBreakdown.push({ role: 'Coordinator', name: a.coordinator, hours: a.coordinatorHours || 0 });
 
-                    // Show the SA's scope — their hours per phase
+                    // Find SA's own hours
                     const userLower = (filterUser || '').toLowerCase();
-                    let scopeHTML = '';
-                    if (plan && plan.phases) {
-                        scopeHTML = `<table class="sa-scope-table">
-                            <tr><th>Phase</th><th>Dates</th><th>Your Hours</th></tr>
-                            ${plan.phases.map(p => {
-                                const myEntry = p.team.find(t => t.member.toLowerCase().includes(userLower));
-                                const hrs = myEntry ? myEntry.hours : 0;
-                                return `<tr><td style="color:#C9A227;font-weight:600;">${p.name}</td><td>${p.startDate ? formatDate(p.startDate) + ' → ' + formatDate(p.endDate) : '-'}</td><td style="font-weight:600;">${hrs}h</td></tr>`;
-                            }).join('')}
-                        </table>`;
-                    }
-
-                    // Gantt preview
-                    const ganttHTML = plan ? buildGanttPreview(plan, a.title) : '';
+                    const myEntry = teamBreakdown.find(t => t.name.toLowerCase().includes(userLower));
+                    const myHours = myEntry ? myEntry.hours : 0;
 
                     html += `<div class="sa-review-card">
-                        <h3>🔍 Review: ${a.title || 'Untitled'}</h3>
-                        <div style="color:#888;font-size:13px;margin:8px 0;">Kickoff: ${formatDate(a.kickoffDate)} • PM: ${a.seniorPM || '-'}</div>
-                        ${scopeHTML}
-                        ${ganttHTML}
-                        <div class="form-group" style="margin-top:16px;">
+                        <h3 style="color:#C9A227;margin-bottom:12px;">🔍 Review: ${a.title || 'Untitled'}</h3>
+                        
+                        <!-- Project Details -->
+                        <div style="background:#1a1a1a;border-radius:8px;padding:16px;margin-bottom:16px;">
+                            <div style="font-size:14px;font-weight:600;color:#ccc;margin-bottom:12px;">📋 Project Scope</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">
+                                <div><span style="color:#888;">Type:</span> <span style="color:#ccc;">${a.projectType || '-'}</span></div>
+                                <div><span style="color:#888;">Package:</span> <span style="color:#ccc;">${a.package || '-'}</span></div>
+                                <div><span style="color:#888;">Complexity:</span> <span style="color:#ccc;">${a.complexityLevel || '-'}</span></div>
+                                <div><span style="color:#888;">Risk:</span> <span style="color:#ccc;">${a.riskLevel || '-'}</span></div>
+                                <div><span style="color:#888;">Jurisdiction:</span> <span style="color:#ccc;">${a.jurisdiction || '-'}</span></div>
+                                <div><span style="color:#888;">Delivery:</span> <span style="color:#ccc;">${a.deliveryExpectation || '-'}</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Hours Breakdown -->
+                        <div style="background:#1a1a1a;border-radius:8px;padding:16px;margin-bottom:16px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                <div style="font-size:14px;font-weight:600;color:#ccc;">⏱️ Hours Allocation</div>
+                                <div style="font-size:18px;font-weight:700;color:#C9A227;">${totalHours}h total</div>
+                            </div>
+                            <div class="team-grid">
+                                ${teamBreakdown.map(t => `
+                                    <div class="team-member-card" style="${t.name.toLowerCase().includes(userLower) ? 'border-color:#C9A227;background:rgba(201,162,39,0.1);' : ''}">
+                                        <div class="team-member-role">${t.role}</div>
+                                        <div class="team-member-name">${t.name}</div>
+                                        <div class="team-member-hours" style="${t.name.toLowerCase().includes(userLower) ? 'color:#C9A227;' : ''}">${t.hours}h</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ${myHours > 0 ? `<div style="margin-top:12px;padding:10px;background:rgba(201,162,39,0.1);border-radius:6px;border-left:3px solid #C9A227;">
+                                <span style="color:#C9A227;font-weight:600;">Your allocation: ${myHours}h</span>
+                            </div>` : ''}
+                        </div>
+
+                        <!-- Kickoff Info -->
+                        <div style="font-size:13px;color:#888;margin-bottom:16px;">
+                            <span>📅 Kickoff Date: <strong style="color:#ccc;">${formatDate(a.kickoffDate) || 'Not set'}</strong></span>
+                            <span style="margin-left:16px;">👤 PM: <strong style="color:#ccc;">${a.seniorPM || '-'}</strong></span>
+                        </div>
+
+                        <div class="form-group">
                             <label class="form-label">Adjustment Notes (optional)</label>
                             <textarea class="form-input" id="saNotesFor${a.id}" rows="2" placeholder="Any scope/hours adjustments needed? Leave blank if everything looks good."></textarea>
                         </div>
                         <div style="display:flex;gap:12px;margin-top:16px;">
-                            <button class="btn btn-approve" onclick="confirmSAReview('${a.id}')">✅ Confirm Scope</button>
+                            <button class="btn btn-approve" onclick="confirmSAReview('${a.id}')">✅ Confirm Scope & Hours</button>
                         </div>
                     </div>`;
                 });
