@@ -2525,14 +2525,14 @@
             // READY TO FINALIZE
             if (readyToFinalize.length > 0) {
                 html += `<div class="section-title" style="margin-top:24px;">✅ Ready to Finalize (${readyToFinalize.length})</div>`;
-                html += readyToFinalize.map(a => {
+                html += readyToFinalize.map((a, idx) => {
                     return `<div class="kickoff-project-card">
                         <div style="display:flex;justify-content:space-between;align-items:center;">
                             <div>
                                 <div style="font-size:16px;font-weight:600;">${a.title || 'Untitled'}</div>
                                 <div style="color:#888;font-size:13px;margin-top:4px;">SA: ${a.saReviewer || '-'} confirmed ✅ ${a.saAdjustmentNotes ? `• Notes: "${a.saAdjustmentNotes}"` : ''}</div>
                             </div>
-                            <button class="btn btn-approve" onclick="window.doFinalizeProject('${a.id}')">🟢 Set Active</button>
+                            <button class="btn btn-approve" id="finalizeBtn${idx}">🟢 Set Active</button>
                         </div>
                     </div>`;
                 }).join('');
@@ -2542,8 +2542,6 @@
             if (awaitingSA.length > 0) {
                 html += `<div class="section-title" style="margin-top:24px;">⏳ Awaiting SA Review (${awaitingSA.length})</div>`;
                 html += awaitingSA.map(a => {
-                    let plan = null;
-                    try { plan = JSON.parse(a.kickoffPlan); } catch(e) {}
                     return `<div class="kickoff-project-card" style="border-color:#64B5F6;">
                         <div style="display:flex;justify-content:space-between;align-items:center;">
                             <div>
@@ -2552,7 +2550,6 @@
                             </div>
                             <span class="status-pill" style="background:rgba(100,181,246,0.2);color:#64B5F6;">Awaiting SA</span>
                         </div>
-                        ${plan ? buildGanttPreview(plan, a.title) : ''}
                     </div>`;
                 }).join('');
             }
@@ -2561,6 +2558,14 @@
             html += `<div id="kickoffFormArea" style="display:none;"></div>`;
 
             document.getElementById('tab-kickoff').innerHTML = html;
+
+            // Wire up finalize buttons IMMEDIATELY after innerHTML (same pattern as submit button)
+            readyToFinalize.forEach(function(a, idx) {
+                var btn = document.getElementById('finalizeBtn' + idx);
+                if (btn) {
+                    btn.onclick = function() { doFinalizeProject(a.id); };
+                }
+            });
         }
 
         // ==================== START KICKOFF ====================
@@ -2879,7 +2884,7 @@
         }
 
         // ==================== FINALIZE PROJECT ====================
-        window.doFinalizeProject = function(assessmentId) {
+        function doFinalizeProject(assessmentId) {
             if (!confirm('Set this project as Active? Phase tracking will begin and Client Portal will be updated.')) return;
             
             fetch(API_URL + '/assessments/' + assessmentId, {
@@ -2905,7 +2910,7 @@
                 }
             })
             .catch(function(e) { alert('Error: ' + e.message); });
-        };
+        }
 
         // ==================== KICKOFF FORM HELPERS ====================
         function updatePhaseDate(phaseIdx, field, value) {
