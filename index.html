@@ -3398,14 +3398,14 @@
                     const progress = Number(c.projectProgress) || 0;
                     const progressClass = progress > 75 ? 'progress-green' : progress > 50 ? 'progress-yellow' : '';
 
-                    // Match phases by client name
-                    const clientNameLower = (c.name || '').toLowerCase();
-                    const projectPhases = phases.filter(p => p.project && clientNameLower && p.project.toLowerCase().includes(clientNameLower.split(' ')[0]));
+                    // Match phases by exact project name
+                    const clientName = (c.name || '').trim();
+                    const projectPhases = phases.filter(p => p.project && clientName && p.project.trim().toLowerCase() === clientName.toLowerCase());
                     const totalAlloc = projectPhases.reduce((s, p) => s + (Number(p.hoursAllocated) || 0), 0);
                     const totalLogged = projectPhases.reduce((s, p) => s + (Number(p.hoursLogged) || 0), 0);
                     const hoursPct = totalAlloc > 0 ? Math.round((totalLogged / totalAlloc) * 100) : 0;
 
-                    const team = [c.projectDesigner, c.projectManager, c.additionalTeam].filter(Boolean).map(t => String(t).split('(')[0].trim());
+                    const team = [c.devProjectDesigner || c.projectDesigner, c.devProjectManager || c.projectManager, c.additionalTeam].filter(Boolean).map(t => String(t).split('(')[0].trim());
 
                     return `<div class="phase-card" style="margin-bottom:16px;">
                         <div class="phase-header" onclick="this.parentElement.classList.toggle('collapsed')" style="cursor:pointer;">
@@ -3436,8 +3436,8 @@
                             </div>
                             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:12px;">
                                 <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">${c.projectType || '-'}</div></div>
-                                <div class="detail-item"><div class="detail-label">Designer</div><div class="detail-value">${String(c.projectDesigner||'-').split('(')[0].trim()}</div></div>
-                                <div class="detail-item"><div class="detail-label">PM</div><div class="detail-value">${String(c.projectManager||'-').split('(')[0].trim()}</div></div>
+                                <div class="detail-item"><div class="detail-label">Designer</div><div class="detail-value">${String(c.devProjectDesigner || c.projectDesigner || '-').split('(')[0].trim()}</div></div>
+                                <div class="detail-item"><div class="detail-label">PM</div><div class="detail-value">${String(c.devProjectManager || c.projectManager || '-').split('(')[0].trim()}</div></div>
                                 <div class="detail-item"><div class="detail-label">Target Completion</div><div class="detail-value">${formatDate(c.targetCompletionDate) || '-'}</div></div>
                                 <div class="detail-item"><div class="detail-label">Budget</div><div class="detail-value">${c.targetBudget || '-'}</div></div>
                                 <div class="detail-item"><div class="detail-label">Deposit</div><div class="detail-value">${c.depositStatus || '-'}</div></div>
@@ -3783,8 +3783,8 @@
                         </div>
                     </td>
                     <td><span class="phase-tag">${c.projectTracker || '-'}</span></td>
-                    <td style="font-size:11px;">${c.projectDesigner || '-'}</td>
-                    <td style="font-size:11px;">${c.projectManager || '-'}</td>
+                    <td style="font-size:11px;">${c.devProjectDesigner || c.projectDesigner || '-'}</td>
+                    <td style="font-size:11px;">${c.devProjectManager || c.projectManager || '-'}</td>
                     <td>${c.email || '-'}</td>
                     <td>${canEdit ? `<button class="action-btn small" onclick="openEditClientModal('${c.id}')">✏️ Edit</button>` : '-'}</td>
                 </tr>`;
