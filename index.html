@@ -3398,7 +3398,7 @@
                     const totalLogged = projectPhases.reduce((s, p) => s + (Number(p.hoursLogged) || 0), 0);
                     const hoursPct = totalAlloc > 0 ? Math.round((totalLogged / totalAlloc) * 100) : 0;
 
-                    const team = [c.projectDesigner, c.projectManager, c.additionalTeam].filter(Boolean).map(t => t.split('(')[0].trim());
+                    const team = [c.projectDesigner, c.projectManager, c.additionalTeam].filter(Boolean).map(t => String(t).split('(')[0].trim());
 
                     return `<div class="phase-card" style="margin-bottom:16px;">
                         <div class="phase-header" onclick="this.parentElement.classList.toggle('collapsed')" style="cursor:pointer;">
@@ -3429,8 +3429,8 @@
                             </div>
                             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:12px;">
                                 <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">${c.projectType || '-'}</div></div>
-                                <div class="detail-item"><div class="detail-label">Designer</div><div class="detail-value">${(c.projectDesigner||'-').split('(')[0].trim()}</div></div>
-                                <div class="detail-item"><div class="detail-label">PM</div><div class="detail-value">${(c.projectManager||'-').split('(')[0].trim()}</div></div>
+                                <div class="detail-item"><div class="detail-label">Designer</div><div class="detail-value">${String(c.projectDesigner||'-').split('(')[0].trim()}</div></div>
+                                <div class="detail-item"><div class="detail-label">PM</div><div class="detail-value">${String(c.projectManager||'-').split('(')[0].trim()}</div></div>
                                 <div class="detail-item"><div class="detail-label">Target Completion</div><div class="detail-value">${formatDate(c.targetCompletionDate) || '-'}</div></div>
                                 <div class="detail-item"><div class="detail-label">Budget</div><div class="detail-value">${c.targetBudget || '-'}</div></div>
                                 <div class="detail-item"><div class="detail-label">Deposit</div><div class="detail-value">${c.depositStatus || '-'}</div></div>
@@ -3801,9 +3801,12 @@
                 </div>` : '<div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">No Clients</div></div>'}`;
         }
 
-        function openEditClientModal(clientId) {
+        async function openEditClientModal(clientId) {
             const c = clientsData?.clients?.find(cl => cl.id === clientId);
-            if (!c) return;
+            if (!c) { alert('Client not found'); return; }
+
+            // Ensure staff data is loaded for dropdowns
+            if (!staffData) await loadStaff();
 
             const html = `<div class="modal-overlay active" id="editClientModal" onclick="if(event.target===this)this.remove()">
                 <div class="modal wide" style="max-height:90vh;overflow-y:auto;">
@@ -3890,7 +3893,7 @@
 
         function buildStaffOptions(currentValue, type) {
             const staff = staffData?.staff || [];
-            const current = (currentValue || '').split('(')[0].trim();
+            const current = String(currentValue || '').split('(')[0].trim();
             let options = '<option value="">-- Select --</option>';
             const names = [...new Set(staff.map(s => s.name).filter(Boolean))];
             names.forEach(name => {
