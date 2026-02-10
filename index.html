@@ -2914,10 +2914,17 @@
             .then(function(response) { return response.json(); })
             .then(function(result) {
                 if (result.success) {
-                    alert('Project is now Active! 🟢\nClient Portal has been updated — Softr will reflect this immediately.');
+                    var msg = 'Project is now Active! 🟢\n\n';
+                    if (result.clientPortalSynced) {
+                        msg += '✅ Client Portal updated:\n• Status → Active\n• Team → Design\n• PM & Designer assigned\n\nSoftr will reflect this immediately.';
+                    } else {
+                        msg += '⚠️ Client Portal NOT updated:\n' + (result.clientPortalError || 'Unknown error') + '\n\nPlease check the Client Portal relation in Notion.';
+                    }
+                    alert(msg);
                     assessmentsData = null;
                     dashboardData = null;
                     pendingClientsData = null;
+                    clientsData = null;
                     var actionBar = document.getElementById('kickoffActionBar');
                     if (actionBar) actionBar.style.display = 'none';
                     loadKickoff();
@@ -3801,94 +3808,107 @@
                 </div>` : '<div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-title">No Clients</div></div>'}`;
         }
 
-        async function openEditClientModal(clientId) {
-            const c = clientsData?.clients?.find(cl => cl.id === clientId);
+        function openEditClientModal(clientId) {
+            var c = clientsData?.clients?.find(function(cl) { return cl.id === clientId; });
             if (!c) { alert('Client not found'); return; }
 
             // Ensure staff data is loaded for dropdowns
-            if (!staffData) await loadStaff();
+            if (!staffData) {
+                loadStaff().then(function() {
+                    showEditClientModal(c);
+                });
+            } else {
+                showEditClientModal(c);
+            }
+        }
 
-            const html = `<div class="modal-overlay active" id="editClientModal" onclick="if(event.target===this)this.remove()">
-                <div class="modal wide" style="max-height:90vh;overflow-y:auto;">
-                    <div class="modal-header"><h2 class="modal-title">✏️ Edit Client — ${c.name}</h2><button class="modal-close" onclick="document.getElementById('editClientModal').remove()">&times;</button></div>
+        function showEditClientModal(c) {
+            var html = '<div class="modal-overlay active" id="editClientModal" onclick="if(event.target===this)this.remove()">' +
+                '<div class="modal wide" style="max-height:90vh;overflow-y:auto;">' +
+                    '<div class="modal-header"><h2 class="modal-title">✏️ Edit Client — ' + (c.name || '') + '</h2><button class="modal-close" onclick="document.getElementById(\'editClientModal\').remove()">&times;</button></div>' +
 
-                    <div class="form-section-title">Client Info</div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Client Name</label><input type="text" class="form-input" id="ecName" value="${(c.name||'').replace(/"/g,'&quot;')}"></div>
-                        <div class="form-group"><label class="form-label">Company</label><input type="text" class="form-input" id="ecCompany" value="${(c.companyName||'').replace(/"/g,'&quot;')}"></div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="ecEmail" value="${c.email||''}"></div>
-                        <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" id="ecPhone" value="${c.phone||''}"></div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Address</label><input type="text" class="form-input" id="ecAddress" value="${(c.address||'').replace(/"/g,'&quot;')}"></div>
-                        <div class="form-group"><label class="form-label">County</label><input type="text" class="form-input" id="ecCounty" value="${(c.county||'').replace(/"/g,'&quot;')}"></div>
-                    </div>
+                    '<div class="form-section-title">Client Info</div>' +
+                    '<div class="form-row">' +
+                        '<div class="form-group"><label class="form-label">Client Name</label><input type="text" class="form-input" id="ecName" value="' + (c.name||'').replace(/"/g,'&quot;') + '"></div>' +
+                        '<div class="form-group"><label class="form-label">Company</label><input type="text" class="form-input" id="ecCompany" value="' + (c.companyName||'').replace(/"/g,'&quot;') + '"></div>' +
+                    '</div>' +
+                    '<div class="form-row">' +
+                        '<div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="ecEmail" value="' + (c.email||'') + '"></div>' +
+                        '<div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" id="ecPhone" value="' + (c.phone||'') + '"></div>' +
+                    '</div>' +
+                    '<div class="form-row">' +
+                        '<div class="form-group"><label class="form-label">Address</label><input type="text" class="form-input" id="ecAddress" value="' + (c.address||'').replace(/"/g,'&quot;') + '"></div>' +
+                        '<div class="form-group"><label class="form-label">County</label><input type="text" class="form-input" id="ecCounty" value="' + (c.county||'').replace(/"/g,'&quot;') + '"></div>' +
+                    '</div>' +
 
-                    <div class="form-section-title">Project Info (visible on Softr)</div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="ecStatus"><option ${c.status==='New Lead'?'selected':''}>New Lead</option><option ${c.status==='Active'?'selected':''}>Active</option><option ${c.status==='Paused'?'selected':''}>Paused</option><option ${c.status==='Completed'?'selected':''}>Completed</option></select></div>
-                        <div class="form-group"><label class="form-label">Team</label><select class="form-select" id="ecTeam"><option value="">-- Select --</option><option ${c.team==='Client Intake'?'selected':''}>Client Intake</option><option ${c.team==='Design'?'selected':''}>Design</option><option ${c.team==='Permitting'?'selected':''}>Permitting</option><option ${c.team==='Project Management'?'selected':''}>Project Management</option></select></div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Project Type</label><select class="form-select" id="ecType"><option value="">-- Select --</option><option ${c.projectType==='New Build'?'selected':''}>New Build</option><option ${c.projectType==='Addition'?'selected':''}>Addition</option><option ${c.projectType==='Renovation'?'selected':''}>Renovation</option><option ${c.projectType==='Commercial'?'selected':''}>Commercial</option><option ${c.projectType==='Site Survey'?'selected':''}>Site Survey</option></select></div>
-                    </div>
-                    <div class="form-group"><label class="form-label">Project Description</label><textarea class="form-textarea" id="ecDesc">${c.projectDescription||''}</textarea></div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Project Progress (%)</label><input type="number" class="form-input" id="ecProgress" min="0" max="100" value="${c.projectProgress||0}"></div>
-                        <div class="form-group"><label class="form-label">Project Tracker (Phase)</label><select class="form-select" id="ecTracker"><option value="">-- Select --</option><option ${c.projectTracker==='Concept'?'selected':''}>Concept</option><option ${c.projectTracker==='Design'?'selected':''}>Design</option><option ${c.projectTracker==='Markups'?'selected':''}>Markups</option><option ${c.projectTracker==='Revisions'?'selected':''}>Revisions</option><option ${c.projectTracker==='Permitting'?'selected':''}>Permitting</option><option ${c.projectTracker==='Construction Docs'?'selected':''}>Construction Docs</option><option ${c.projectTracker==='Final'?'selected':''}>Final</option><option ${c.projectTracker==='Complete'?'selected':''}>Complete</option></select></div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Services Requested</label><input type="text" class="form-input" id="ecServices" value="${(c.servicesRequested||'').replace(/"/g,'&quot;')}"></div>
-                        <div class="form-group"><label class="form-label">Target Budget</label><input type="text" class="form-input" id="ecBudget" value="${(c.targetBudget||'').replace(/"/g,'&quot;')}"></div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Start Date</label><input type="date" class="form-input" id="ecStart" value="${c.startDate||''}"></div>
-                        <div class="form-group"><label class="form-label">Target Completion</label><input type="date" class="form-input" id="ecCompletion" value="${c.targetCompletionDate||''}"></div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Design Review Date</label><input type="date" class="form-input" id="ecDesignReview" value="${c.designReviewDate||''}"></div>
-                        <div class="form-group"><label class="form-label">Expected Approval Date</label><input type="date" class="form-input" id="ecApprovalDate" value="${c.expectedApprovalDate||''}"></div>
-                    </div>
+                    '<div class="form-section-title">Project Info (visible on Softr)</div>' +
+                    '<div class="form-row">' +
+                        '<div class="form-group"><label class="form-label">Status</label><select class="form-select" id="ecStatus"><option ' + (c.status==='New Lead'?'selected':'') + '>New Lead</option><option ' + (c.status==='Active'?'selected':'') + '>Active</option><option ' + (c.status==='Paused'?'selected':'') + '>Paused</option><option ' + (c.status==='Completed'?'selected':'') + '>Completed</option></select></div>' +
+                        '<div class="form-group"><label class="form-label">Team</label><select class="form-select" id="ecTeam"><option value="">-- Select --</option><option ' + (c.team==='Client Intake'?'selected':'') + '>Client Intake</option><option ' + (c.team==='Design'?'selected':'') + '>Design</option><option ' + (c.team==='Permitting'?'selected':'') + '>Permitting</option><option ' + (c.team==='Project Management'?'selected':'') + '>Project Management</option></select></div>' +
+                    '</div>' +
+                    '<div class="form-row">' +
+                        '<div class="form-group"><label class="form-label">Project Type</label><select class="form-select" id="ecType"><option value="">-- Select --</option><option ' + (c.projectType==='New Build'?'selected':'') + '>New Build</option><option ' + (c.projectType==='Addition'?'selected':'') + '>Addition</option><option ' + (c.projectType==='Renovation'?'selected':'') + '>Renovation</option><option ' + (c.projectType==='Commercial'?'selected':'') + '>Commercial</option><option ' + (c.projectType==='Site Survey'?'selected':'') + '>Site Survey</option></select></div>' +
+                    '</div>' +
+                    '<div class="form-group"><label class="form-label">Project Description</label><textarea class="form-textarea" id="ecDesc">' + (c.projectDescription||'') + '</textarea></div>' +
+                    '<div class="form-row">' +
+                        '<div class="form-group"><label class="form-label">Project Progress (%)</label><input type="number" class="form-input" id="ecProgress" min="0" max="100" value="' + (c.projectProgress||0) + '"></div>' +
+                        '<div class="form-group"><label class="form-label">Project Tracker (Phase)</label><select class="form-select" id="ecTracker"><option value="">-- Select --</option><option ' + (c.projectTracker==='Concept'?'selected':'') + '>Concept</option><option ' + (c.projectTracker==='Design'?'selected':'') + '>Design</option><option ' + (c.projectTracker==='Markups'?'selected':'') + '>Markups</option><option ' + (c.projectTracker==='Revisions'?'selected':'') + '>Revisions</option><option ' + (c.projectTracker==='Permitting'?'selected':'') + '>Permitting</option><option ' + (c.projectTracker==='Construction Docs'?'selected':'') + '>Construction Docs</option><option ' + (c.projectTracker==='Final Pass'?'selected':'') + '>Final Pass</option><option ' + (c.projectTracker==='Complete'?'selected':'') + '>Complete</option></select></div>' +
+                    '</div>' +
+                    '<div class="form-row">' +
+                        '<div class="form-group"><label class="form-label">Services Requested</label><input type="text" class="form-input" id="ecServices" value="' + (c.servicesRequested||'').replace(/"/g,'&quot;') + '"></div>' +
+                        '<div class="form-group"><label class="form-label">Target Budget</label><input type="text" class="form-input" id="ecBudget" value="' + (c.targetBudget||'').replace(/"/g,'&quot;') + '"></div>' +
+                    '</div>' +
+                    '<div class="form-row">' +
+                        '<div class="form-group"><label class="form-label">Start Date</label><input type="date" class="form-input" id="ecStart" value="' + (c.startDate||'') + '"></div>' +
+                        '<div class="form-group"><label class="form-label">Target Completion</label><input type="date" class="form-input" id="ecCompletion" value="' + (c.targetCompletionDate||'') + '"></div>' +
+                    '</div>' +
+                    '<div class="form-row">' +
+                        '<div class="form-group"><label class="form-label">Design Review Date</label><input type="date" class="form-input" id="ecDesignReview" value="' + (c.designReviewDate||'') + '"></div>' +
+                        '<div class="form-group"><label class="form-label">Expected Approval Date</label><input type="date" class="form-input" id="ecApprovalDate" value="' + (c.expectedApprovalDate||'') + '"></div>' +
+                    '</div>' +
 
-                    <div class="form-section-title">Team (visible on Softr)</div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Project Manager</label><select class="form-select" id="ecPM">${buildStaffOptions(c.projectManager, 'pm')}</select></div>
-                        <div class="form-group"><label class="form-label">PM Email</label><input type="email" class="form-input" id="ecPMEmail" value="${c.projectManagerEmail||''}"></div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Project Designer</label><select class="form-select" id="ecDesigner">${buildStaffOptions(c.projectDesigner, 'designer')}</select></div>
-                        <div class="form-group"><label class="form-label">Designer Email</label><input type="email" class="form-input" id="ecDesignerEmail" value="${c.projectDesignerEmail||''}"></div>
-                    </div>
-                    <div class="form-group"><label class="form-label">Additional Team</label><input type="text" class="form-input" id="ecAdditionalTeam" value="${(c.additionalTeam||'').replace(/"/g,'&quot;')}"></div>
+                    '<div class="form-section-title">Team (visible on Softr)</div>' +
+                    '<div class="form-row">' +
+                        '<div class="form-group"><label class="form-label">Project Manager</label><select class="form-select" id="ecPM">' + buildStaffOptions(c.projectManager, 'pm') + '</select></div>' +
+                        '<div class="form-group"><label class="form-label">PM Email</label><input type="email" class="form-input" id="ecPMEmail" value="' + (c.projectManagerEmail||'') + '"></div>' +
+                    '</div>' +
+                    '<div class="form-row">' +
+                        '<div class="form-group"><label class="form-label">Project Designer</label><select class="form-select" id="ecDesigner">' + buildStaffOptions(c.projectDesigner, 'designer') + '</select></div>' +
+                        '<div class="form-group"><label class="form-label">Designer Email</label><input type="email" class="form-input" id="ecDesignerEmail" value="' + (c.projectDesignerEmail||'') + '"></div>' +
+                    '</div>' +
+                    '<div class="form-group"><label class="form-label">Additional Team</label><input type="text" class="form-input" id="ecAdditionalTeam" value="' + (c.additionalTeam||'').replace(/"/g,'&quot;') + '"></div>' +
 
-                    <div class="form-section-title">Payments</div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Deposit Status</label><select class="form-select" id="ecDeposit"><option value="">-- Select --</option><option ${c.depositStatus==='Deposit Payment Complete'?'selected':''}>Deposit Payment Complete</option><option ${c.depositStatus==='Pending'?'selected':''}>Pending</option><option ${c.depositStatus==='Not Required'?'selected':''}>Not Required</option></select></div>
-                        <div class="form-group"><label class="form-label">Proposal Status</label><select class="form-select" id="ecProposal"><option value="">-- Select --</option><option ${c.proposalStatus==='Accepted'?'selected':''}>Accepted</option><option ${c.proposalStatus==='Pending'?'selected':''}>Pending</option><option ${c.proposalStatus==='Declined'?'selected':''}>Declined</option></select></div>
-                    </div>
-                    <div class="form-group"><label class="form-label">Balance Remaining</label><input type="text" class="form-input" id="ecBalance" value="${(c.totalBalanceRemaining||'').replace(/"/g,'&quot;')}"></div>
+                    '<div class="form-section-title">Payments</div>' +
+                    '<div class="form-row">' +
+                        '<div class="form-group"><label class="form-label">Deposit Status</label><select class="form-select" id="ecDeposit"><option value="">-- Select --</option><option ' + (c.depositStatus==='Deposit Payment Complete'?'selected':'') + '>Deposit Payment Complete</option><option ' + (c.depositStatus==='Pending'?'selected':'') + '>Pending</option><option ' + (c.depositStatus==='Not Required'?'selected':'') + '>Not Required</option></select></div>' +
+                        '<div class="form-group"><label class="form-label">Proposal Status</label><select class="form-select" id="ecProposal"><option value="">-- Select --</option><option ' + (c.proposalStatus==='Accepted'?'selected':'') + '>Accepted</option><option ' + (c.proposalStatus==='Pending'?'selected':'') + '>Pending</option><option ' + (c.proposalStatus==='Declined'?'selected':'') + '>Declined</option></select></div>' +
+                    '</div>' +
+                    '<div class="form-group"><label class="form-label">Balance Remaining</label><input type="text" class="form-input" id="ecBalance" value="' + (c.totalBalanceRemaining||'').toString().replace(/"/g,'&quot;') + '"></div>' +
 
-                    <div class="form-section-title">Latest Update & Client Communication</div>
-                    <div class="form-group"><label class="form-label">Latest Update (shown on Softr)</label><textarea class="form-textarea" id="ecUpdate" placeholder="This appears in Project Updates on the client portal">${c.latestUpdate||''}</textarea></div>
-                    <div class="form-group">
-                        <label class="form-label">📧 Update Customer by Email</label>
-                        <select class="form-select" id="ecEmailTrigger" style="border-color:#C9A227;">
-                            <option value="No Email" ${c.updateCustomerByEmail==='No Email'||!c.updateCustomerByEmail?'selected':''}>No Email</option>
-                            <option value="Send Portal Update">Send Portal Update</option>
-                            <option value="Send Design Update">Send Design Update</option>
-                            <option value="Send Permit Update">Send Permit Update</option>
-                        </select>
-                        <div style="font-size:11px;color:#888;margin-top:4px;">Selecting an option triggers the Notion automation to email the client.</div>
-                    </div>
+                    '<div class="form-section-title">📢 Project Updates (Client Communication)</div>' +
+                    '<div class="form-group"><label class="form-label">Latest Update (shown on Softr portal)</label><textarea class="form-textarea" id="ecUpdate" rows="4" placeholder="Write an update for the client. This will appear in their Project Updates section on Softr.">' + (c.latestUpdate||'') + '</textarea></div>' +
+                    '<div class="form-group">' +
+                        '<label class="form-label">📧 Update Customer by Email</label>' +
+                        '<select class="form-select" id="ecEmailTrigger" style="border-color:#C9A227;">' +
+                            '<option value="No Email" ' + (c.updateCustomerByEmail==='No Email'||!c.updateCustomerByEmail?'selected':'') + '>No Email</option>' +
+                            '<option value="Send Portal Update">Send Portal Update</option>' +
+                            '<option value="Send Design Update">Send Design Update</option>' +
+                            '<option value="Send Permit Update">Send Permit Update</option>' +
+                        '</select>' +
+                        '<div style="font-size:11px;color:#888;margin-top:4px;">Selecting an option triggers the Notion automation to email the client.</div>' +
+                    '</div>' +
 
-                    <button class="form-submit" id="editClientBtn" onclick="saveClient('${c.id}')">💾 Save & Sync to Softr</button>
-                    <div class="form-success" id="editClientSuccess">✅ Client updated! Changes synced to Softr portal.</div>
-                    <div class="form-error" id="editClientError">❌ Error updating client.</div>
-                </div>
-            </div>`;
+                    '<button class="form-submit" id="editClientBtn">💾 Save & Sync to Softr</button>' +
+                    '<div class="form-success" id="editClientSuccess" style="display:none;">✅ Client updated! Changes synced to Softr portal.</div>' +
+                    '<div class="form-error" id="editClientError" style="display:none;">❌ Error updating client.</div>' +
+                '</div>' +
+            '</div>';
             document.body.insertAdjacentHTML('beforeend', html);
+            
+            // Wire up save button
+            document.getElementById('editClientBtn').onclick = function() {
+                saveClient(c.id);
+            };
         }
 
         function buildStaffOptions(currentValue, type) {
@@ -3902,55 +3922,69 @@
             return options;
         }
 
-        async function saveClient(clientId) {
-            const btn = document.getElementById('editClientBtn');
-            btn.disabled = true; btn.textContent = '⏳ Saving...';
-            try {
-                const response = await fetch(`${API_URL}/clients/${clientId}`, {
-                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: document.getElementById('ecName').value,
-                        companyName: document.getElementById('ecCompany').value,
-                        email: document.getElementById('ecEmail').value,
-                        phone: document.getElementById('ecPhone').value,
-                        address: document.getElementById('ecAddress').value,
-                        county: document.getElementById('ecCounty').value,
-                        status: document.getElementById('ecStatus').value,
-                        team: document.getElementById('ecTeam').value || undefined,
-                        projectType: document.getElementById('ecType').value,
-                        projectDescription: document.getElementById('ecDesc').value,
-                        projectProgress: document.getElementById('ecProgress').value,
-                        projectTracker: document.getElementById('ecTracker').value,
-                        servicesRequested: document.getElementById('ecServices').value,
-                        targetBudget: document.getElementById('ecBudget').value,
-                        startDate: document.getElementById('ecStart').value || undefined,
-                        targetCompletionDate: document.getElementById('ecCompletion').value || undefined,
-                        designReviewDate: document.getElementById('ecDesignReview').value || undefined,
-                        expectedApprovalDate: document.getElementById('ecApprovalDate').value || undefined,
-                        projectManager: document.getElementById('ecPM').value,
-                        projectManagerEmail: document.getElementById('ecPMEmail').value,
-                        projectDesigner: document.getElementById('ecDesigner').value,
-                        projectDesignerEmail: document.getElementById('ecDesignerEmail').value,
-                        additionalTeam: document.getElementById('ecAdditionalTeam').value,
-                        depositStatus: document.getElementById('ecDeposit').value || undefined,
-                        proposalStatus: document.getElementById('ecProposal').value || undefined,
-                        totalBalanceRemaining: document.getElementById('ecBalance').value,
-                        latestUpdate: document.getElementById('ecUpdate').value,
-                        updateCustomerByEmail: document.getElementById('ecEmailTrigger').value,
-                        devProjectManager: document.getElementById('ecPM').value,
-                        devProjectDesigner: document.getElementById('ecDesigner').value
-                    })
-                });
-                const result = await response.json();
+        function saveClient(clientId) {
+            var btn = document.getElementById('editClientBtn');
+            btn.disabled = true; 
+            btn.textContent = '⏳ Saving...';
+            
+            fetch(API_URL + '/clients/' + clientId, {
+                method: 'PATCH', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('ecName').value,
+                    companyName: document.getElementById('ecCompany').value,
+                    email: document.getElementById('ecEmail').value,
+                    phone: document.getElementById('ecPhone').value,
+                    address: document.getElementById('ecAddress').value,
+                    county: document.getElementById('ecCounty').value,
+                    status: document.getElementById('ecStatus').value,
+                    team: document.getElementById('ecTeam').value || undefined,
+                    projectType: document.getElementById('ecType').value,
+                    projectDescription: document.getElementById('ecDesc').value,
+                    projectProgress: document.getElementById('ecProgress').value,
+                    projectTracker: document.getElementById('ecTracker').value,
+                    servicesRequested: document.getElementById('ecServices').value,
+                    targetBudget: document.getElementById('ecBudget').value,
+                    startDate: document.getElementById('ecStart').value || undefined,
+                    targetCompletionDate: document.getElementById('ecCompletion').value || undefined,
+                    designReviewDate: document.getElementById('ecDesignReview').value || undefined,
+                    expectedApprovalDate: document.getElementById('ecApprovalDate').value || undefined,
+                    projectManager: document.getElementById('ecPM').value,
+                    projectManagerEmail: document.getElementById('ecPMEmail').value,
+                    projectDesigner: document.getElementById('ecDesigner').value,
+                    projectDesignerEmail: document.getElementById('ecDesignerEmail').value,
+                    additionalTeam: document.getElementById('ecAdditionalTeam').value,
+                    depositStatus: document.getElementById('ecDeposit').value || undefined,
+                    proposalStatus: document.getElementById('ecProposal').value || undefined,
+                    totalBalanceRemaining: document.getElementById('ecBalance').value,
+                    latestUpdate: document.getElementById('ecUpdate').value,
+                    updateCustomerByEmail: document.getElementById('ecEmailTrigger').value,
+                    devProjectManager: document.getElementById('ecPM').value,
+                    devProjectDesigner: document.getElementById('ecDesigner').value
+                })
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(result) {
                 if (result.success) {
                     document.getElementById('editClientSuccess').style.display = 'block';
                     btn.textContent = '✅ Saved!';
-                    setTimeout(() => { document.getElementById('editClientModal')?.remove(); clientsData = null; loadClients(); }, 1500);
-                } else throw new Error('Failed');
-            } catch (e) {
+                    setTimeout(function() { 
+                        var modal = document.getElementById('editClientModal');
+                        if (modal) modal.remove(); 
+                        clientsData = null; 
+                        loadClients(); 
+                    }, 1500);
+                } else {
+                    document.getElementById('editClientError').style.display = 'block';
+                    btn.disabled = false; 
+                    btn.textContent = '💾 Save & Sync to Softr';
+                }
+            })
+            .catch(function(e) {
                 document.getElementById('editClientError').style.display = 'block';
-                btn.disabled = false; btn.textContent = '💾 Save & Sync to Softr';
-            }
+                btn.disabled = false; 
+                btn.textContent = '💾 Save & Sync to Softr';
+            });
         }
 
         // ==================== COORDINATION TAB ====================
